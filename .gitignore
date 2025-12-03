@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django migrations: ignore migration files but keep __init__.py so apps remain importable
+**/migrations/*.py
+**/migrations/*.pyc
+!**/migrations/__init__.py
+
+# Common Python/Django ignores
+*.log
+local_settings.py
+db.sqlite3
+/media/
+
+# Virtual environments
+venv/
+ENV/
+.env/
+
+# Editor folders
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
