@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import (Categoria_list, Categoria_detail, 
                     Product_list, Product_detail, Product_detail_by_slug,
-                    order_list, order_detail, order_status_update)
+                    order_list, order_detail, order_status_update,
+                    register_user, login_user, get_current_user, update_profile, logout_user)
 
 
 urlpatterns = [
@@ -12,6 +13,11 @@ urlpatterns = [
     path('products/slug/<slug:slug>/', Product_detail_by_slug, name='product-detail-slug'),
     path('orders/', order_list, name='order-list'),
     path('orders/<int:pk>/', order_detail, name='order-detail'),
-    path('orders/<int:pk>/status/', order_status_update, name='order-status'),    
+    path('orders/<int:pk>/status/', order_status_update, name='order-status'),
+    path('auth/register/', register_user, name='auth-register'),
+    path('auth/login/', login_user, name='auth-login'),
+    path('auth/me/', get_current_user, name='auth-me'),
+    path('auth/profile/', update_profile, name='auth-profile'),
+    path('auth/logout/', logout_user, name='auth-logout'),    
 
 ]
