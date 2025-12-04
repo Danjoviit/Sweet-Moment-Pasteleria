@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.response import Response
 from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer
@@ -81,8 +81,6 @@ def Product_detail(request, pk):
         return Response(serializer.data)
 
         
-        serializer = ProductoSerializer(product, many =True)
-        return Response(serializer.data)
     
     elif request.method == 'PUT':
         serializer = ProductoSerializer(product, data=request.data)
@@ -158,8 +156,9 @@ def order_status_update(request, pk):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_user(request):
-    Permission_classes = [AllowAny]
+
     serializers = RegisterSerializer(data=request.data)
     if serializers.is_valid():
         user = serializers.save()
@@ -170,17 +169,27 @@ def register_user(request):
     return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_user(request):
-    permission_classes = [AllowAny]
+
     serializer = CustomLoginSerializer(data=request.data)
 
     if serializer.is_valid():
-        email = serializer.validate_data['email']
+        email = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
         #AUTENTICACION MANUAL
 
-        user = authenticate(username=email, password=password)
+        try:
+            user_exists = User.objects.get(email=email)
+            print(f"Usuario encontrado en BD: {user_exists}")
+            print(f"¿Es activo?: {user_exists.is_active}")
+            print(f"¿La contraseña coincide?: {user_exists.check_password(password)}")
+            print(f"Username real en BD: {user_exists.username}")
+        except User.DoesNotExist:
+            print("ERROR: El usuario NO existe en la base de datos.")
+
+        user = authenticate(request=request, username=email, password=password)
 
         if user:
             refresh = RefreshToken.for_user(user)
@@ -191,7 +200,7 @@ def login_user(request):
                 'user': UserSerializers(user).data
             }, status=status.HTTP_200_OK)
         return Response({'error': 'Credenciales invalidas'}, status=status.HTTP_401_UNAUTHORIZED)
-    return Response(serializer.errores, status=status.HTTP_400_BAD_REQUEST)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def get_current_user(request):

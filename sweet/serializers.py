@@ -11,7 +11,7 @@ class CategoriaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['name', 'slug', 'description', 'image', 'is_active']
+        fields = ['id', 'name', 'slug', 'description', 'image', 'is_active']
 
 
 
@@ -44,7 +44,7 @@ class ProductoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['name', 'slug', 'description', 'category', 'image', 'basePrice', 'price', 'stock', 'isActive', 'variants']
+        fields = ['id', 'name', 'slug', 'description', 'category', 'image', 'basePrice', 'price', 'stock', 'isActive', 'variants']
 
 
     def create(self, validated_data):
@@ -110,7 +110,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        field = [
+        fields = [
             'id', 'orderNumber', 'userId', 'customerName', 'customerEmail', 'customerPhone',
             'items', 'subtotal', 'deliveryCost', 'total', 'deliveryType',
             'deliveryAddress', 'deliveryZone', 'paymentMethod', 'notes', 
@@ -131,7 +131,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
         return order
 
-class UserSerializers(serializers.ModelsSerializer):
+class UserSerializers(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'email', 'name', 'phone', 'role', 'avatar']
@@ -144,19 +144,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ['name', 'email', 'password', 'phone', 'role']
 
-        def create(self, validate_data):
-            user = User.objects.create_user(
-                username=validate_data['email'],
-                email=validate_data['email'],
-                password=validate_data['password'],
-                name=validate_data.get('name', ''),
-                phone = validate_data.get('phone', ''),
-                role=validate_data.get('role', 'usuario')
-            )
-            return user
+    def create(self, validated_data):
+        user = User.objects.create_user(
+            username=validated_data['email'],
+            email=validated_data['email'],
+            password=validated_data['password'],
+            phone = validated_data.get('phone', ''),
+            role=validated_data.get('role', 'usuario'),
+            name= validated_data['name']
+
+        )
+        return user
         
 class CustomLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
-    
