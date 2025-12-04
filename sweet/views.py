@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import CategoriaSerializer
-from .models import Category
+from .serializers import CategoriaSerializer, ProductoSerializer
+from .models import Category, Product
 from django.shortcuts import get_object_or_404
 # Create your views here.
 
@@ -45,4 +45,18 @@ def Categoria_detail(request, pk):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST'])
+def Product_list(request):
+    if request.method == 'GET':
+        products = Product.objects.prefetch_related('variants').all()
+        serializer = ProductoSerializer(products, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = ProductoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
