@@ -3,6 +3,8 @@ from .models import *
 
 class CategoriaSerializer(serializers.ModelSerializer):
 
+    slug = serializers.SlugField(read_only=True)
+
     class Meta:
         model = Category
         fields = ['name', 'slug', 'description', 'image', 'is_active']
@@ -23,6 +25,9 @@ class ProductoSerializer(serializers.ModelSerializer):
 
     variants = ProductoVarianteSerializer(many=True)
 
+
+    slug = serializers.SlugField(read_only=True)
+    
     category = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Category.objects.all()
@@ -35,7 +40,7 @@ class ProductoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['name', 'slug', 'description', 'description', 'category', 'image', 'basePrice', 'price', 'stock', 'isActive', 'variants']
+        fields = ['name', 'slug', 'description', 'category', 'image', 'basePrice', 'price', 'stock', 'isActive', 'variants']
 
 
     def create(self, validated_data):
@@ -47,4 +52,4 @@ class ProductoSerializer(serializers.ModelSerializer):
         for variant in variants_data:
             ProductVariant.objects.create(product=product, **variant)
 
-            return product
+        return product
