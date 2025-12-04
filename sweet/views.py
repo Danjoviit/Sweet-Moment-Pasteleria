@@ -11,9 +11,8 @@ from django.shortcuts import get_object_or_404
 def Categoria_list(request):
     if request.method == 'GET':
         categoria = Category.objects.all()
-        serializer = CategoriaSerializer(categoria, many=True,)
+        serializer = CategoriaSerializer(categoria, many=True)
         return Response(serializer.data)
-    
     elif request.method == 'POST':
         serializer = CategoriaSerializer(data=request.data)
         if serializer.is_valid():
