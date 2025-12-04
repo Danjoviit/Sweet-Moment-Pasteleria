@@ -145,20 +145,20 @@ export default function MenuPage() {
                     {categories.map((category) => (
                       <button
                         key={category.id}
-                        onClick={() => setSelectedCategory(category.id)}
+                        onClick={() => setSelectedCategory(category.slug)}
                         className={cn(
                           "w-full text-left px-4 py-3 rounded-xl transition-all font-medium flex items-center justify-between group",
-                          selectedCategory === category.id
+                          selectedCategory === category.slug
                             ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg shadow-rose-200"
                             : "bg-white text-gray-700 hover:bg-rose-50 border border-rose-100 hover:border-rose-200",
                         )}
                       >
                         <span>{category.name}</span>
-                        {selectedCategory !== category.id && (
+                        {selectedCategory !== category.slug && (
                           <span className="text-xs text-gray-400 group-hover:text-rose-400">
-                            {category.id === "all"
+                            {category.slug === "all"
                               ? products.length
-                              : products.filter((p) => p.category === category.id).length}
+                              : products.filter((p) => p.category === category.slug).length}
                           </span>
                         )}
                       </button>
@@ -204,12 +204,12 @@ export default function MenuPage() {
                       <button
                         key={category.id}
                         onClick={() => {
-                          setSelectedCategory(category.id)
+                          setSelectedCategory(category.slug)
                           setMobileFilterOpen(false)
                         }}
                         className={cn(
                           "px-4 py-3 rounded-xl transition-all font-medium text-sm",
-                          selectedCategory === category.id
+                          selectedCategory === category.slug
                             ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md"
                             : "bg-white text-gray-700 border border-rose-100",
                         )}
