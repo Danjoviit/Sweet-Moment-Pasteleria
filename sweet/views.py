@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import CategoriaSerializer, ProductoSerializer
-from .models import Category, Product
+from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer
+from .models import *
 from django.shortcuts import get_object_or_404
 # Create your views here.
 
@@ -103,3 +103,48 @@ def Product_detail_by_slug(request, slug):
     if request.method == 'GET':
         serializer = ProductoSerializer(product)
         return Response(serializer.data)
+    
+
+@api_view(['GET', 'POST'])
+def order_list(request):
+    if request.method == 'GET':
+        orders = Order.objects.prefetch_related('items').all().order_by('-created_at')
+
+        status_param = request.query_params.get('status')
+        user_param = request.query_params.get('user')
+
+
+        if status_param:
+            orders = orders.filter(status=status_param)
+        if user_param:
+            orders = orders.filter(user__id=user_param)
+        
+        serrializer = OrderSerializer(orders, many=True)
+
+        return Response(serrializer.data)
+    elif request.method == 'POST':
+        serializers = OrderSerializer(data=request.data)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+def order_detail(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+
+    if request.method == 'GET':
+        serializers = OrderSerializer(order)
+        return Response(serializers.data)
+    
+@api_view(['PATCH'])
+def order_status_update(request, pk):
+    order = get_object_or_404(Order, pk=pk)
+
+    if request.method == 'PATCH':
+        serializers = OrderSerializer(order, data=request.data, partial=True)
+
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data)
+        return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
