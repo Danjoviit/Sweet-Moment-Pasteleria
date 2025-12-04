@@ -21,7 +21,7 @@ def Categoria_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'PUT', 'DELETE', 'PATCH'])
 def Categoria_detail(request, pk):
 
     categoria = get_object_or_404(Category, pk=pk)
@@ -40,3 +40,10 @@ def Categoria_detail(request, pk):
     elif request.method == 'DELETE':
         categoria.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    elif request.method == 'PATCH':
+        serializer = CategoriaSerializer(categoria, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
