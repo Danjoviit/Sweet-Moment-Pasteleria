@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import *
 from django.db import transaction
 import uuid
-
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
 
 class CategoriaSerializer(serializers.ModelSerializer):
 
@@ -129,3 +130,33 @@ class OrderSerializer(serializers.ModelSerializer):
                 OrderItem.objects.create(order=order, **item_data)
 
         return order
+
+class UserSerializers(serializers.ModelsSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'name', 'phone', 'role', 'avatar']
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['name', 'email', 'password', 'phone', 'role']
+
+        def create(self, validate_data):
+            user = User.objects.create_user(
+                username=validate_data['email'],
+                email=validate_data['email'],
+                password=validate_data['password'],
+                name=validate_data.get('name', ''),
+                phone = validate_data.get('phone', ''),
+                role=validate_data.get('role', 'usuario')
+            )
+            return user
+        
+class CustomLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    
