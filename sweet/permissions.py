@@ -1,0 +1,17 @@
+from rest_framework.permissions import BasePermission
+
+class IsAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.role in ['admin', 'Administrador'])
+    
+class IsReceptionist(BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and
+                    request.user.role in ['recepcionista', 'Recepcionista', 'admin', 'Administrador'])
+
+
+class IsOwnerOrStaff(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.user.role in ['recepcionista', 'Recepcionista', 'admin', 'Administrador']:
+            return True
+        return obj.user == request.user

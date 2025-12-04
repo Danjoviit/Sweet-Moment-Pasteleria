@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from .permissions import IsAdmin, IsOwnerOrStaff, IsReceptionist
 
 
 
@@ -55,8 +55,8 @@ def Categoria_detail(request, pk):
 
 
 @api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
 def Product_list(request):
-
     if request.method == 'GET':
         products = Product.objects.prefetch_related('variants').all()
         category_slug = request.query_params.get('category')
@@ -66,6 +66,11 @@ def Product_list(request):
         serializer = ProductoSerializer(products, many=True)
         return Response(serializer.data)
     elif request.method == 'POST':
+
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({"error": "solo el administrador puede crear productos"})
+
+
         serializer = ProductoSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -83,6 +88,10 @@ def Product_detail(request, pk):
         
     
     elif request.method == 'PUT':
+
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({"error": "solo el administrador puede crear productos"})
+
         serializer = ProductoSerializer(product, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -90,10 +99,15 @@ def Product_detail(request, pk):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     elif request.method == 'DELETE':
+
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({"error": "solo el administrador puede crear productos"})
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
     elif request.method == 'PATCH':
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({"error": "solo el administrador puede crear productos"})        
         serializer = ProductoSerializer(product, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -110,9 +124,18 @@ def Product_detail_by_slug(request, slug):
     
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def order_list(request):
+    user = request.user
+
     if request.method == 'GET':
-        orders = Order.objects.prefetch_related('items').all().order_by('-created_at')
+
+        if user.role in ['admin', 'recepcionista']:
+        
+            orders = Order.objects.prefetch_related('items').all().order_by('-created_at')
+        else:
+            orders = Order.objects.prefetch_related('items').filter(user=user).order_by('-created_at')
+
 
         status_param = request.query_params.get('status')
         user_param = request.query_params.get('user')
@@ -140,8 +163,10 @@ def order_detail(request, pk):
     if request.method == 'GET':
         serializers = OrderSerializer(order)
         return Response(serializers.data)
-    
+
+ 
 @api_view(['PATCH'])
+@permission_classes([IsReceptionist])
 def order_status_update(request, pk):
     order = get_object_or_404(Order, pk=pk)
 
