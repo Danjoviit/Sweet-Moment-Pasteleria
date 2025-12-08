@@ -3,7 +3,8 @@ from .views import (Categoria_list, Categoria_detail,
                     Product_list, Product_detail, Product_detail_by_slug,
                     order_list, order_detail, order_status_update,
                     register_user, login_user, get_current_user, update_profile, logout_user,
-                    address_list_create, address_detail)
+                    address_list_create, address_detail,
+                    favorite_list, favorite_detail)
 
 
 urlpatterns = [
@@ -22,5 +23,6 @@ urlpatterns = [
     path('auth/logout/', logout_user, name='auth-logout'),    
     path('auth/addresses/', address_list_create, name='address-list-create'),
     path('auth/addresses/<int:pk>/', address_detail, name='address-detail'),
-
+    path('favorites/', favorite_list, name='favorite-list'),
+    path('favorites/<int:product_id>/', favorite_detail, name='favorite-detail'),
 ]

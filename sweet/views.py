@@ -284,3 +284,45 @@ def address_detail(request, pk):
         address.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def favorite_list(request):
+    user = request.user
+
+    if request.method == 'GET':
+
+        favorite_ids = Favorite.objects.filter(user=user).values_list('product_id', flat=True)
+        return Response(list(favorite_ids))
+    elif request.method == 'POST':
+        data = request.data
+
+        product_id = data.get('productId') or data.get('product_id')
+
+        if not product_id:
+            return Response(
+                {"error": "se requiere 'productId' o 'product_id' en el cuerpo de la solicitud"},
+                status=status.HTTP_400_BAD_REQUEST
+            
+            )
+        
+        product = get_object_or_404(Product, pk=product_id)
+
+        Favorite.objects.get_or_create(user=user, product=product)
+
+        return Response({"message": "Producto agregado a favoritos"}, status=status.HTTP_201_CREATED)
+    
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def favorite_detail(request, product_id):
+
+    user = request.user
+
+    favorite = Favorite.objects.filter(user=user, product_id=product_id)
+
+    if favorite.exists():
+        favorite.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    return Response(
+        {"error": "el producto no estaba en favorito"},
+        status=status.HTTP_404_NOT_FOUND
+        )
