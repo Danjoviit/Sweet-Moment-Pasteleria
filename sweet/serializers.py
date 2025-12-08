@@ -168,14 +168,14 @@ class AddressSerializer(serializers.ModelSerializer):
         queryset=DeliveryZone.objects.all()
     )
 
-    IsDefault = serializers.BoolenaField(source='is_default', required=False)
+    IsDefault = serializers.BooleanField(source='is_default', required=False)
 
     class Meta:
         model = Address
         fields = ['id', 'label', 'address', 'zone', 'isDefault']
 
     def create(self, validated_data):
-        user = self.context['request']
+        user = self.context['request'].user
 
         if validated_data.get('is_default', False):
             Address.objects.filter(user=user, is_default=True).update(is_default=False)

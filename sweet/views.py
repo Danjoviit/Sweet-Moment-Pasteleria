@@ -146,9 +146,9 @@ def order_list(request):
         if user_param:
             orders = orders.filter(user__id=user_param)
         
-        serrializer = OrderSerializer(orders, many=True)
+        serializer = OrderSerializer(orders, many=True)
 
-        return Response(serrializer.data)
+        return Response(serializer.data)
     elif request.method == 'POST':
         serializers = OrderSerializer(data=request.data)
         if serializers.is_valid():
