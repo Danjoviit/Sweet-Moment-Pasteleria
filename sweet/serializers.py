@@ -184,3 +184,12 @@ class AddressSerializer(serializers.ModelSerializer):
         if validated_data.get('is_default', False):
             Address.objects.filter(user=instance.user, is_default=True).exclude(id=instance.id).update(is_default=False)
         return super().update(instance, validated_data)
+
+
+class DeliveryZoneSerializer(serializers.ModelSerializer):
+    estimatedTime = serializers.CharField(source= 'estimated_time')
+    isActive = serializers.BooleanField(source='is_active')
+
+    class Meta:
+        model = DeliveryZone
+        fields = ['id', 'name', 'price', 'estimatedTime', 'isActive']

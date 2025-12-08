@@ -4,7 +4,8 @@ from .views import (Categoria_list, Categoria_detail,
                     order_list, order_detail, order_status_update,
                     register_user, login_user, get_current_user, update_profile, logout_user,
                     address_list_create, address_detail,
-                    favorite_list, favorite_detail)
+                    favorite_list, favorite_detail,
+                    delivery_zone_list, delivery_zone_detail)
 
 
 urlpatterns = [
@@ -25,4 +26,6 @@ urlpatterns = [
     path('auth/addresses/<int:pk>/', address_detail, name='address-detail'),
     path('favorites/', favorite_list, name='favorite-list'),
     path('favorites/<int:product_id>/', favorite_detail, name='favorite-detail'),
+    path('delivery-zones/', delivery_zone_list, name='delivery-zone-list'),
+    path('delivery-zones/<int:pk>/', delivery_zone_detail, name='delivery-zone-detail'),    
 ]

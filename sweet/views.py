@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer, AddressSerializer
+from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer, AddressSerializer, DeliveryZoneSerializer
 from .models import *
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
@@ -326,3 +326,35 @@ def favorite_detail(request, product_id):
         {"error": "el producto no estaba en favorito"},
         status=status.HTTP_404_NOT_FOUND
         )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def delivery_zone_detail(request, pk):
+    zone = get_object_or_404(DeliveryZone, pk=pk)
+
+    if request.method == 'GET':
+        serializer = DeliveryZoneSerializer(zone)
+        return Response(serializer.data)
+    
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny]) 
+def delivery_zone_list(request):
+    if request.method == 'GET':
+        zones = DeliveryZone.objects.filter(is_active=True)
+        serializer = DeliveryZoneSerializer(zones, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response(
+                {"error": "Solo administradores pueden crear zonas"}, 
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = DeliveryZoneSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
