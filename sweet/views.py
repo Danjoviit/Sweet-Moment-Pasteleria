@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer
+from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer, AddressSerializer
 from .models import *
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
@@ -253,3 +253,34 @@ def logout_user(request):
         return Response({"message": "logout exitoso"}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response ({"error": 'Token invalido'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST', 'GET'])
+@permission_classes([IsAuthenticated])
+def address_list_create(request):
+    if request.method == 'GET':
+        addresses = Address.objects.filter(user=request.user)
+        serializer = AddressSerializer(addresses, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = AddressSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def address_detail(request, pk):
+    address = get_object_or_404(Address, pk=pk, user=request.user)
+
+    if request.method == 'PATCH':
+        serializer = AddressSerializer(address, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        address.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    

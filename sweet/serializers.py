@@ -160,3 +160,27 @@ class CustomLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    zone = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=DeliveryZone.objects.all()
+    )
+
+    IsDefault = serializers.BoolenaField(source='is_default', required=False)
+
+    class Meta:
+        model = Address
+        fields = ['id', 'label', 'address', 'zone', 'isDefault']
+
+    def create(self, validated_data):
+        user = self.context['request']
+
+        if validated_data.get('is_default', False):
+            Address.objects.filter(user=user, is_default=True).update(is_default=False)
+        return Address.objects.create(user=user, **validated_data)
+    def update(self, instance, validated_data):
+        if validated_data.get('is_default', False):
+            Address.objects.filter(user=instance.user, is_default=True).exclude(id=instance.id).update(is_default=False)
+        return super().update(instance, validated_data)

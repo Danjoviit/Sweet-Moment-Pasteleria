@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (Categoria_list, Categoria_detail, 
                     Product_list, Product_detail, Product_detail_by_slug,
                     order_list, order_detail, order_status_update,
-                    register_user, login_user, get_current_user, update_profile, logout_user)
+                    register_user, login_user, get_current_user, update_profile, logout_user,
+                    address_list_create, address_detail)
 
 
 urlpatterns = [
@@ -19,5 +20,7 @@ urlpatterns = [
     path('auth/me/', get_current_user, name='auth-me'),
     path('auth/profile/', update_profile, name='auth-profile'),
     path('auth/logout/', logout_user, name='auth-logout'),    
+    path('auth/addresses/', address_list_create, name='address-list-create'),
+    path('auth/addresses/<int:pk>/', address_detail, name='address-detail'),
 
 ]
