@@ -1,14 +1,14 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer, AddressSerializer, DeliveryZoneSerializer
+from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer, AddressSerializer, DeliveryZoneSerializer, PromotionSerializer
 from .models import *
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import IsAdmin, IsOwnerOrStaff, IsReceptionist
-
+from django.utils import timezone
 
 
 
@@ -358,3 +358,51 @@ def delivery_zone_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def promotion_list(request):
+
+    if request.method == 'GET':
+        now = timezone.now()
+
+        promotions = Promotion.objects.filter(
+            is_active=True,
+            valid_until__gte=now,
+            valid_from__lte=now
+        )
+
+        serializer = PromotionSerializer(promotions, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response(
+                {"error": "solo administradores pueden crear promociones"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = PromotionSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def promotion_detail_by_code(request, pk):
+
+    promo = get_object_or_404(Promotion, code=pk)
+
+    now = timezone.now()
+
+    if not promo.is_active or promo.valid_until < now:
+        return Response(
+            {"error": "Esta promocion ha expirado o no esta activa"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    if request.method == 'GET':
+        serializer = PromotionSerializer(promo)
+        return Response(serializer.data)

@@ -5,7 +5,8 @@ from .views import (Categoria_list, Categoria_detail,
                     register_user, login_user, get_current_user, update_profile, logout_user,
                     address_list_create, address_detail,
                     favorite_list, favorite_detail,
-                    delivery_zone_list, delivery_zone_detail)
+                    delivery_zone_list, delivery_zone_detail,
+                    promotion_list, promotion_detail_by_code)
 
 
 urlpatterns = [
@@ -27,5 +28,7 @@ urlpatterns = [
     path('favorites/', favorite_list, name='favorite-list'),
     path('favorites/<int:product_id>/', favorite_detail, name='favorite-detail'),
     path('delivery-zones/', delivery_zone_list, name='delivery-zone-list'),
-    path('delivery-zones/<int:pk>/', delivery_zone_detail, name='delivery-zone-detail'),    
+    path('delivery-zones/<int:pk>/', delivery_zone_detail, name='delivery-zone-detail'),
+    path('promotions/', promotion_list, name='promotion-list'),
+    path('promotions/code/<str:code>/', promotion_detail_by_code, name='promotion-detail-code'),    
 ]

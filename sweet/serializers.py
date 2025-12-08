@@ -193,3 +193,20 @@ class DeliveryZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = DeliveryZone
         fields = ['id', 'name', 'price', 'estimatedTime', 'isActive']
+
+
+class PromotionSerializer(serializers.ModelSerializer):
+    discountType = serializers.CharField(source='discount_type')
+    discountValue = serializers.DecimalField(source='discount_value', max_digits=10, decimal_places=2)
+    minPurchase = serializers.DecimalField(source='min_purchase', max_digits=10, decimal_places=2)
+    validFrom = serializers.DateTimeField(source='valid_from')
+    validUntil = serializers.DateTimeField(source='valid_until')
+    isActive = serializers.BooleanField(source='is_active')
+
+    class Meta:
+        model = Promotion
+        fields = [
+            'id', 'name', 'description', 'code', 
+            'discountType', 'discountValue', 'minPurchase', 
+            'validFrom', 'validUntil', 'isActive'
+            ]
