@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import status
 from rest_framework.response import Response
-from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer, AddressSerializer, DeliveryZoneSerializer, PromotionSerializer
+from .serializers import CategoriaSerializer, ProductoSerializer, OrderSerializer, UserSerializers, RegisterSerializer, CustomLoginSerializer, AddressSerializer, DeliveryZoneSerializer, PromotionSerializer, ReviewSerializer
 from .models import *
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import authenticate
@@ -414,17 +414,17 @@ def dashboard_stats(request):
     revenue_data = Order.objects.exclude(status='cancelado').aggregate(total=Sum('total'))
     total_revenue = revenue_data['total'] or 0.00
 
-    total_orders = Order.objects.count()
+    total_orders = Order.objects.Count()
 
-    pending_orders = Order.objects.filter(status='recibido').count()
+    pending_orders = Order.objects.filter(status='recibido').Count()
 
-    preparing_orders = Order.objects.filter(status='en_preparacion').count()
+    preparing_orders = Order.objects.filter(status='en_preparacion').Count()
 
-    completed_orders = Order.objects.filter(status='entregado').count()
+    completed_orders = Order.objects.filter(status='entregado').Count()
 
-    total_users = User.objects.filter(role='usuario').count()
+    total_users = User.objects.filter(role='usuario').Count()
 
-    low_stock_products = Product.objects.filter(stock__lt=5, is_active=True).count()
+    low_stock_products = Product.objects.filter(stock__lt=5, is_active=True).Count()
 
     data = {
         "totalRevenue": total_revenue,
@@ -437,3 +437,49 @@ def dashboard_stats(request):
     }
 
     return Response(data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def review_list(request):
+
+    if request.method == 'GET':
+        reviews = Review.objects.all().order_by('-created_at')
+
+        product_id = request.query_params.get('product')
+        if product_id:
+            reviews = reviews.filter(product_id=product_id)
+        serializer = ReviewSerializer(reviews, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        if not request.user.is_authenticated:
+            return Response({"error": "debes iniciar sesion para reseñar"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        serializer = ReviewSerializer(data=request.data, context={'request': request})
+
+
+        if serializer.is_valid:
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated, IsOwnerOrStaff])
+def review_detail(request, pk):
+    review = get_object_or_404(Review, pk=pk)
+
+    if request.user != review.user and request.user.role not in ['admin', 'recepcionista']:
+        return Response({"message": "error, no tienes permiso para ver esta ruta"}, status=status.HTTP_403_FORBIDDEN)
+    
+    if request.method == 'PATCH':
+        serializer = ReviewSerializer(review, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    if request.method == 'DELETE':
+        review.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    

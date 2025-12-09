@@ -7,7 +7,8 @@ from .views import (Categoria_list, Categoria_detail,
                     favorite_list, favorite_detail,
                     delivery_zone_list, delivery_zone_detail,
                     promotion_list, promotion_detail_by_code,
-                    dashboard_stats)
+                    dashboard_stats,
+                    review_list, review_detail)
 
 
 urlpatterns = [
@@ -33,4 +34,6 @@ urlpatterns = [
     path('promotions/', promotion_list, name='promotion-list'),
     path('promotions/code/<str:code>/', promotion_detail_by_code, name='promotion-detail-code'),  
     path('dashboard/stats/', dashboard_stats, name='dashboard-stats'),
+    path('reviews/', review_list, name='review-list'),
+    path('reviews/<int:pk>/', review_detail, name='review-detail'),
 ]
