@@ -9,7 +9,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from .permissions import IsAdmin, IsOwnerOrStaff, IsReceptionist
 from django.utils import timezone
-
+from django.db.models import Sum, Count, Q
 
 
 
@@ -406,3 +406,34 @@ def promotion_detail_by_code(request, pk):
     if request.method == 'GET':
         serializer = PromotionSerializer(promo)
         return Response(serializer.data)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAdmin])
+def dashboard_stats(request):
+    revenue_data = Order.objects.exclude(status='cancelado').aggregate(total=Sum('total'))
+    total_revenue = revenue_data['total'] or 0.00
+
+    total_orders = Order.objects.count()
+
+    pending_orders = Order.objects.filter(status='recibido').count()
+
+    preparing_orders = Order.objects.filter(status='en_preparacion').count()
+
+    completed_orders = Order.objects.filter(status='entregado').count()
+
+    total_users = User.objects.filter(role='usuario').count()
+
+    low_stock_products = Product.objects.filter(stock__lt=5, is_active=True).count()
+
+    data = {
+        "totalRevenue": total_revenue,
+        "totalOrders": total_orders,
+        "pendingOrders": pending_orders,
+        "completedOrders": completed_orders,
+        "totalUsers": total_users,
+        "lowStocProducts": low_stock_products,
+        "preparingOrders": preparing_orders
+    }
+
+    return Response(data)
