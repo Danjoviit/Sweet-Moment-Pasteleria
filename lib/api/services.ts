@@ -42,12 +42,12 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 export const categoriesService = {
   getAll: async (): Promise<Category[]> => {
     if (USE_MOCK_DATA) return mockCategories
-    return fetchApi<Category[]>("/api/categories/")
+    return fetchApi<Category[]>("/categories/")
   },
 
   getById: async (id: string): Promise<Category | undefined> => {
     if (USE_MOCK_DATA) return mockCategories.find((c) => c.id === id)
-    return fetchApi<Category>(`/api/categories/${id}/`)
+    return fetchApi<Category>(`/categories/${id}/`)
   },
 
   create: async (data: Partial<Category>): Promise<Category> => {
@@ -56,7 +56,7 @@ export const categoriesService = {
       mockCategories.push(newCategory)
       return newCategory
     }
-    return fetchApi<Category>("/api/categories/", { method: "POST", body: JSON.stringify(data) })
+    return fetchApi<Category>("/categories/", { method: "POST", body: JSON.stringify(data) })
   },
 
   update: async (id: string, data: Partial<Category>): Promise<Category> => {
@@ -65,7 +65,7 @@ export const categoriesService = {
       if (index !== -1) mockCategories[index] = { ...mockCategories[index], ...data }
       return mockCategories[index]
     }
-    return fetchApi<Category>(`/api/categories/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
+    return fetchApi<Category>(`/categories/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
   },
 
   delete: async (id: string): Promise<void> => {
@@ -74,7 +74,7 @@ export const categoriesService = {
       if (index !== -1) mockCategories.splice(index, 1)
       return
     }
-    await fetchApi(`/api/categories/${id}/`, { method: "DELETE" })
+    await fetchApi(`/categories/${id}/`, { method: "DELETE" })
   },
 }
 
@@ -82,22 +82,22 @@ export const categoriesService = {
 export const productsService = {
   getAll: async (): Promise<Product[]> => {
     if (USE_MOCK_DATA) return mockProducts.filter((p) => p.isActive)
-    return fetchApi<Product[]>("/api/products/")
+    return fetchApi<Product[]>("/products/")
   },
 
   getByCategory: async (categoryId: string): Promise<Product[]> => {
     if (USE_MOCK_DATA) return mockProducts.filter((p) => p.category === categoryId && p.isActive)
-    return fetchApi<Product[]>(`/api/products/?category=${categoryId}`)
+    return fetchApi<Product[]>(`/products/?category=${categoryId}`)
   },
 
   getById: async (id: number): Promise<Product | undefined> => {
     if (USE_MOCK_DATA) return mockProducts.find((p) => p.id === id)
-    return fetchApi<Product>(`/api/products/${id}/`)
+    return fetchApi<Product>(`/products/${id}/`)
   },
 
   getBySlug: async (slug: string): Promise<Product | undefined> => {
     if (USE_MOCK_DATA) return mockProducts.find((p) => p.slug === slug)
-    return fetchApi<Product>(`/api/products/slug/${slug}/`)
+    return fetchApi<Product>(`/products/slug/${slug}/`)
   },
 
   create: async (data: Partial<Product>): Promise<Product> => {
@@ -106,7 +106,7 @@ export const productsService = {
       mockProducts.push(newProduct)
       return newProduct
     }
-    return fetchApi<Product>("/api/products/", { method: "POST", body: JSON.stringify(data) })
+    return fetchApi<Product>("/products/", { method: "POST", body: JSON.stringify(data) })
   },
 
   update: async (id: number, data: Partial<Product>): Promise<Product> => {
@@ -115,7 +115,7 @@ export const productsService = {
       if (index !== -1) mockProducts[index] = { ...mockProducts[index], ...data }
       return mockProducts[index]
     }
-    return fetchApi<Product>(`/api/products/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
+    return fetchApi<Product>(`/products/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
   },
 
   updateStock: async (id: number, stock: number): Promise<Product> => {
@@ -128,7 +128,7 @@ export const productsService = {
       if (index !== -1) mockProducts.splice(index, 1)
       return
     }
-    await fetchApi(`/api/products/${id}/`, { method: "DELETE" })
+    await fetchApi(`/products/${id}/`, { method: "DELETE" })
   },
 }
 
@@ -136,22 +136,22 @@ export const productsService = {
 export const ordersService = {
   getAll: async (): Promise<Order[]> => {
     if (USE_MOCK_DATA) return mockOrders
-    return fetchApi<Order[]>("/api/orders/")
+    return fetchApi<Order[]>("/orders/")
   },
 
   getByStatus: async (status: Order["status"]): Promise<Order[]> => {
     if (USE_MOCK_DATA) return mockOrders.filter((o) => o.status === status)
-    return fetchApi<Order[]>(`/api/orders/?status=${status}`)
+    return fetchApi<Order[]>(`/orders/?status=${status}`)
   },
 
   getByUser: async (userId: number): Promise<Order[]> => {
     if (USE_MOCK_DATA) return mockOrders.filter((o) => o.userId === userId)
-    return fetchApi<Order[]>(`/api/orders/?user=${userId}`)
+    return fetchApi<Order[]>(`/orders/?user=${userId}`)
   },
 
   getById: async (id: string): Promise<Order | undefined> => {
     if (USE_MOCK_DATA) return mockOrders.find((o) => o.id === id)
-    return fetchApi<Order>(`/api/orders/${id}/`)
+    return fetchApi<Order>(`/orders/${id}/`)
   },
 
   create: async (data: Partial<Order>): Promise<Order> => {
@@ -167,7 +167,7 @@ export const ordersService = {
       mockOrders.push(newOrder)
       return newOrder
     }
-    return fetchApi<Order>("/api/orders/", { method: "POST", body: JSON.stringify(data) })
+    return fetchApi<Order>("/orders/", { method: "POST", body: JSON.stringify(data) })
   },
 
   updateStatus: async (id: string, status: Order["status"]): Promise<Order> => {
@@ -178,7 +178,7 @@ export const ordersService = {
       }
       return mockOrders[index]
     }
-    return fetchApi<Order>(`/api/orders/${id}/status/`, { method: "PATCH", body: JSON.stringify({ status }) })
+    return fetchApi<Order>(`/orders/${id}/status/`, { method: "PATCH", body: JSON.stringify({ status }) })
   },
 
   cancel: async (id: string): Promise<Order> => {
@@ -190,17 +190,17 @@ export const ordersService = {
 export const usersService = {
   getAll: async (): Promise<User[]> => {
     if (USE_MOCK_DATA) return mockUsers
-    return fetchApi<User[]>("/api/users/")
+    return fetchApi<User[]>("/users/")
   },
 
   getById: async (id: number): Promise<User | undefined> => {
     if (USE_MOCK_DATA) return mockUsers.find((u) => u.id === id)
-    return fetchApi<User>(`/api/users/${id}/`)
+    return fetchApi<User>(`/users/${id}/`)
   },
 
   getByEmail: async (email: string): Promise<User | undefined> => {
     if (USE_MOCK_DATA) return mockUsers.find((u) => u.email === email)
-    return fetchApi<User>(`/api/users/email/${email}/`)
+    return fetchApi<User>(`/users/email/${email}/`)
   },
 
   create: async (data: Partial<User>): Promise<User> => {
@@ -209,7 +209,7 @@ export const usersService = {
       mockUsers.push(newUser)
       return newUser
     }
-    return fetchApi<User>("/api/users/", { method: "POST", body: JSON.stringify(data) })
+    return fetchApi<User>("/users/", { method: "POST", body: JSON.stringify(data) })
   },
 
   update: async (id: number, data: Partial<User>): Promise<User> => {
@@ -218,7 +218,7 @@ export const usersService = {
       if (index !== -1) mockUsers[index] = { ...mockUsers[index], ...data }
       return mockUsers[index]
     }
-    return fetchApi<User>(`/api/users/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
+    return fetchApi<User>(`/users/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
   },
 }
 
@@ -226,12 +226,12 @@ export const usersService = {
 export const deliveryZonesService = {
   getAll: async (): Promise<DeliveryZone[]> => {
     if (USE_MOCK_DATA) return mockDeliveryZones.filter((z) => z.isActive)
-    return fetchApi<DeliveryZone[]>("/api/delivery-zones/")
+    return fetchApi<DeliveryZone[]>("/delivery-zones/")
   },
 
   getById: async (id: string): Promise<DeliveryZone | undefined> => {
     if (USE_MOCK_DATA) return mockDeliveryZones.find((z) => z.id === id)
-    return fetchApi<DeliveryZone>(`/api/delivery-zones/${id}/`)
+    return fetchApi<DeliveryZone>(`/delivery-zones/${id}/`)
   },
 }
 
@@ -239,12 +239,12 @@ export const deliveryZonesService = {
 export const promotionsService = {
   getAll: async (): Promise<Promotion[]> => {
     if (USE_MOCK_DATA) return mockPromotions.filter((p) => p.isActive)
-    return fetchApi<Promotion[]>("/api/promotions/")
+    return fetchApi<Promotion[]>("/promotions/")
   },
 
   getByCode: async (code: string): Promise<Promotion | undefined> => {
     if (USE_MOCK_DATA) return mockPromotions.find((p) => p.code === code && p.isActive)
-    return fetchApi<Promotion>(`/api/promotions/code/${code}/`)
+    return fetchApi<Promotion>(`/promotions/code/${code}/`)
   },
 }
 
@@ -252,7 +252,7 @@ export const promotionsService = {
 export const dashboardService = {
   getStats: async (): Promise<DashboardStats> => {
     if (USE_MOCK_DATA) return mockDashboardStats
-    return fetchApi<DashboardStats>("/api/dashboard/stats/")
+    return fetchApi<DashboardStats>("/dashboard/stats/")
   },
 }
 
@@ -285,17 +285,17 @@ const mockReviews: Review[] = [
 export const reviewsService = {
   getAll: async (): Promise<Review[]> => {
     if (USE_MOCK_DATA) return mockReviews
-    return fetchApi<Review[]>("/api/reviews/")
+    return fetchApi<Review[]>("/reviews/")
   },
 
   getByProduct: async (productId: number): Promise<Review[]> => {
     if (USE_MOCK_DATA) return mockReviews.filter((r) => r.productId === productId)
-    return fetchApi<Review[]>(`/api/reviews/?product=${productId}`)
+    return fetchApi<Review[]>(`/reviews/?product=${productId}`)
   },
 
   getByUser: async (userId: number): Promise<Review[]> => {
     if (USE_MOCK_DATA) return mockReviews.filter((r) => r.userId === userId)
-    return fetchApi<Review[]>(`/api/reviews/?user=${userId}`)
+    return fetchApi<Review[]>(`/reviews/?user=${userId}`)
   },
 
   create: async (data: Partial<Review>): Promise<Review> => {
@@ -309,7 +309,7 @@ export const reviewsService = {
       mockReviews.push(newReview)
       return newReview
     }
-    return fetchApi<Review>("/api/reviews/", { method: "POST", body: JSON.stringify(data) })
+    return fetchApi<Review>("/reviews/", { method: "POST", body: JSON.stringify(data) })
   },
 
   update: async (id: number, data: Partial<Review>): Promise<Review> => {
@@ -318,7 +318,7 @@ export const reviewsService = {
       if (index !== -1) mockReviews[index] = { ...mockReviews[index], ...data }
       return mockReviews[index]
     }
-    return fetchApi<Review>(`/api/reviews/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
+    return fetchApi<Review>(`/reviews/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
   },
 
   delete: async (id: number): Promise<void> => {
@@ -327,7 +327,7 @@ export const reviewsService = {
       if (index !== -1) mockReviews.splice(index, 1)
       return
     }
-    await fetchApi(`/api/reviews/${id}/`, { method: "DELETE" })
+    await fetchApi(`/reviews/${id}/`, { method: "DELETE" })
   },
 }
 
@@ -338,16 +338,16 @@ export const favoritesService = {
       // Retorna IDs de productos favoritos del usuario mock
       return [1, 3, 5]
     }
-    return fetchApi<number[]>(`/api/favorites/?user=${userId}`)
+    return fetchApi<number[]>(`/favorites/?user=${userId}`)
   },
 
   add: async (userId: number, productId: number): Promise<void> => {
     if (USE_MOCK_DATA) return
-    await fetchApi("/api/favorites/", { method: "POST", body: JSON.stringify({ userId, productId }) })
+    await fetchApi("/favorites/", { method: "POST", body: JSON.stringify({ userId, productId }) })
   },
 
   remove: async (userId: number, productId: number): Promise<void> => {
     if (USE_MOCK_DATA) return
-    await fetchApi(`/api/favorites/${productId}/`, { method: "DELETE" })
+    await fetchApi(`/favorites/${productId}/`, { method: "DELETE" })
   },
 }
