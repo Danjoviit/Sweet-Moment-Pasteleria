@@ -1,0 +1,13 @@
+# requirements inferred from project inspection (inspección de `core/settings.py` y código)
+# Ajusta versiones según tu entorno virtual; para una lista exacta usa `pip freeze` dentro del venv.
+Django==5.0.1
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+psycopg2-binary>=2.9.0
+Pillow>=10.0.0
+django-redis==5.4.0
+redis==5.0.1
+django-filter==23.5
+python-decouple==3.8
+requests
