@@ -26,7 +26,7 @@ import type { Category, Product } from "@/lib/api/types"
 
 export default function AdminCategoriasPage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, isHydrated } = useAuthStore()
 
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -45,12 +45,11 @@ export default function AdminCategoriasPage() {
   })
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "administrador") {
-      router.push("/login")
+    if (isHydrated && (!isAuthenticated || user?.role !== "admin")) { router.push("/login")
       return
     }
     loadData()
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, user, router, isHydrated])
 
   const loadData = async () => {
     setIsLoading(true)
@@ -116,7 +115,15 @@ export default function AdminCategoriasPage() {
     setSelectedCategory(null)
   }
 
-  if (!isAuthenticated || user?.role !== "administrador") {
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Cargando...</p>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated || user?.role !== "admin") {
     return null
   }
 
@@ -301,3 +308,6 @@ export default function AdminCategoriasPage() {
     </div>
   )
 }
+
+
+

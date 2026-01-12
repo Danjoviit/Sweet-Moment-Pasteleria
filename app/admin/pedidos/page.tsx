@@ -25,7 +25,7 @@ const statusConfig = {
 
 export default function AdminPedidosPage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, isHydrated } = useAuthStore()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
@@ -33,12 +33,11 @@ export default function AdminPedidosPage() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "admin") {
-      router.push("/login")
+    if (isHydrated && (!isAuthenticated || user?.role !== "admin")) { router.push("/login")
       return
     }
     loadOrders()
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, user, router, isHydrated])
 
   const loadOrders = async () => {
     try {
@@ -161,7 +160,7 @@ export default function AdminPedidosPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="font-bold text-rose-600">${order.total.toFixed(2)}</p>
+                          <p className="font-bold text-rose-600">${Number(order.total).toFixed(2)}</p>
                           <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
                         </div>
                         <Badge className={statusConfig[order.status]?.color}>{statusConfig[order.status]?.label}</Badge>
@@ -218,7 +217,7 @@ export default function AdminPedidosPage() {
                                 <div className="flex-1">
                                   <p className="font-medium">{item.productName}</p>
                                   <p className="text-gray-500">
-                                    x{item.quantity} - ${item.totalPrice.toFixed(2)}
+                                    x{item.quantity} - ${Number(item.totalPrice).toFixed(2)}
                                   </p>
                                 </div>
                               </div>
@@ -266,3 +265,5 @@ export default function AdminPedidosPage() {
     </div>
   )
 }
+
+
