@@ -259,7 +259,7 @@ export default function RecepcionistaPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="text-2xl font-bold text-rose-600">${order.total.toFixed(2)}</p>
+                              <p className="text-2xl font-bold text-rose-600">${Number(order.total).toFixed(2)}</p>
                               <Badge
                                 className={cn(
                                   order.deliveryType === "delivery"
@@ -281,23 +281,23 @@ export default function RecepcionistaPage() {
                                   <span className="text-gray-700">
                                     {item.quantity}x {item.name}
                                   </span>
-                                  <span className="font-medium text-gray-900">${item.price.toFixed(2)}</span>
+                                  <span className="font-medium text-gray-900">${Number(item.price).toFixed(2)}</span>
                                 </div>
                               ))}
                               <div className="border-t border-gray-200 pt-2 mt-2">
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-600">Subtotal:</span>
-                                  <span className="text-gray-900">${order.subtotal.toFixed(2)}</span>
+                                  <span className="text-gray-900">${Number(order.subtotal).toFixed(2)}</span>
                                 </div>
                                 {order.delivery > 0 && (
                                   <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Envío:</span>
-                                    <span className="text-gray-900">${order.delivery.toFixed(2)}</span>
+                                    <span className="text-gray-900">${Number(order.delivery).toFixed(2)}</span>
                                   </div>
                                 )}
                                 <div className="flex justify-between font-bold text-base mt-1">
                                   <span className="text-gray-900">Total:</span>
-                                  <span className="text-rose-600">${order.total.toFixed(2)}</span>
+                                  <span className="text-rose-600">${Number(order.total).toFixed(2)}</span>
                                 </div>
                               </div>
                             </div>
@@ -391,7 +391,7 @@ export default function RecepcionistaPage() {
                           <p className="text-sm text-gray-600">{order.date}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-xl font-bold text-rose-600">${order.total.toFixed(2)}</p>
+                          <p className="text-xl font-bold text-rose-600">${Number(order.total).toFixed(2)}</p>
                           <Badge className={cn(status.color, "text-white mt-2")}>{status.label}</Badge>
                         </div>
                       </div>

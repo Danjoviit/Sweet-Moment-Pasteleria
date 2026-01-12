@@ -137,15 +137,15 @@ export default function FavoritosPage() {
                       {product.discount ? (
                         <div className="flex items-center gap-2">
                           <span className="text-lg font-bold text-rose-600">
-                            ${((product.price || product.basePrice) * (1 - product.discount / 100)).toFixed(2)}
+                            ${(Number(product.price || product.basePrice) * (1 - Number(product.discount) / 100)).toFixed(2)}
                           </span>
                           <span className="text-sm text-gray-400 line-through">
-                            ${(product.price || product.basePrice).toFixed(2)}
+                            ${Number(product.price || product.basePrice).toFixed(2)}
                           </span>
                         </div>
                       ) : (
                         <span className="text-lg font-bold text-rose-600">
-                          ${(product.price || product.basePrice).toFixed(2)}
+                          ${Number(product.price || product.basePrice).toFixed(2)}
                         </span>
                       )}
                     </div>

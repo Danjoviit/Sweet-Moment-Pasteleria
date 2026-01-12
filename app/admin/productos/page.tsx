@@ -28,7 +28,7 @@ import type { Product, Category } from "@/lib/api/types"
 
 export default function AdminProductosPage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, isHydrated } = useAuthStore()
 
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -41,6 +41,7 @@ export default function AdminProductosPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
 
   // Form state
   const [formData, setFormData] = useState({
@@ -54,13 +55,15 @@ export default function AdminProductosPage() {
     image: "/postre.jpg",
   })
 
+  const [variants, setVariants] = useState<Array<{ type: string; price: number; unit?: string }>>([])
+
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "administrador") {
+    if (isHydrated && (!isAuthenticated || user?.role !== "admin")) {
       router.push("/login")
       return
     }
     loadData()
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, user, router, isHydrated])
 
   const loadData = async () => {
     setIsLoading(true)
@@ -77,18 +80,63 @@ export default function AdminProductosPage() {
   })
 
   const handleCreateProduct = async () => {
-    const newProduct = await productsService.create({
-      ...formData,
-      slug: formData.name.toLowerCase().replace(/\s+/g, "-"),
-    })
-    setProducts([...products, newProduct])
-    setShowCreateModal(false)
-    resetForm()
+    // Find category slug from category ID
+    const selectedCategory = categories.find(cat => cat.id === formData.category)
+    if (!selectedCategory) {
+      alert('Por favor selecciona una categoría válida')
+      return
+    }
+
+    const formDataToSend = new FormData()
+    formDataToSend.append('name', formData.name)
+    formDataToSend.append('description', formData.description)
+    formDataToSend.append('category', selectedCategory.slug) // Send slug, not ID
+    formDataToSend.append('basePrice', formData.basePrice.toString())
+    formDataToSend.append('stock', formData.stock.toString())
+    formDataToSend.append('isActive', formData.isActive.toString())
+
+    // Only append variants if there are any
+    if (variants.length > 0) {
+      formDataToSend.append('variants', JSON.stringify(variants))
+    }
+
+    if (imageFile) {
+      formDataToSend.append('image', imageFile)
+    }
+
+    try {
+      const newProduct = await productsService.create(formDataToSend as any)
+      setProducts([...products, newProduct])
+      setShowCreateModal(false)
+      resetForm()
+    } catch (error) {
+      console.error('Error creating product:', error)
+      alert(`Error al crear producto: ${error}`)
+    }
   }
 
   const handleEditProduct = async () => {
     if (!selectedProduct) return
-    const updated = await productsService.update(selectedProduct.id, formData)
+
+    // Find category slug from category ID
+    const selectedCategory = categories.find(cat => cat.id === formData.category)
+    if (!selectedCategory) {
+      alert('Por favor selecciona una categoría válida')
+      return
+    }
+
+    const formDataToSend = new FormData()
+    formDataToSend.append('name', formData.name)
+    formDataToSend.append('description', formData.description)
+    formDataToSend.append('category', selectedCategory.slug) // Send slug, not ID
+    formDataToSend.append('basePrice', formData.basePrice.toString())
+    formDataToSend.append('stock', formData.stock.toString())
+    formDataToSend.append('isActive', formData.isActive.toString())
+    if (imageFile) {
+      formDataToSend.append('image', imageFile)
+    }
+
+    const updated = await productsService.update(selectedProduct.id, formDataToSend as any)
     setProducts(products.map((p) => (p.id === selectedProduct.id ? updated : p)))
     setShowEditModal(false)
     resetForm()
@@ -133,10 +181,34 @@ export default function AdminProductosPage() {
       isActive: true,
       image: "/postre.jpg",
     })
+    setVariants([])
+    setImageFile(null)
     setSelectedProduct(null)
   }
 
-  if (!isAuthenticated || user?.role !== "administrador") {
+  const addVariant = () => {
+    setVariants([...variants, { type: "", price: 0, unit: "" }])
+  }
+
+  const removeVariant = (index: number) => {
+    setVariants(variants.filter((_, i) => i !== index))
+  }
+
+  const updateVariant = (index: number, field: string, value: string | number) => {
+    const newVariants = [...variants]
+    newVariants[index] = { ...newVariants[index], [field]: value }
+    setVariants(newVariants)
+  }
+
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">Cargando...</p>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated || user?.role !== "admin") {
     return null
   }
 
@@ -371,6 +443,79 @@ export default function AdminProductosPage() {
                 </div>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="image">Imagen del Producto</Label>
+              <Input
+                id="image"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    setImageFile(file)
+                  }
+                }}
+                className="border-rose-200"
+              />
+              {imageFile && <p className="text-xs text-gray-600">Archivo seleccionado: {imageFile.name}</p>}
+            </div>
+
+            {/* Sección de Variantes */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <Label>Variantes (Opcional)</Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={addVariant}
+                  className="border-rose-300 text-rose-600 hover:bg-rose-50"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Agregar Variante
+                </Button>
+              </div>
+
+              {variants.map((variant, index) => (
+                <div key={index} className="flex gap-2 items-start p-3 bg-gray-50 rounded-md">
+                  <div className="flex-1 grid grid-cols-3 gap-2">
+                    <Input
+                      placeholder="Tipo (ej: Completa)"
+                      value={variant.type}
+                      onChange={(e) => updateVariant(index, 'type', e.target.value)}
+                      className="border-rose-200"
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Precio"
+                      value={variant.price || ''}
+                      onChange={(e) => updateVariant(index, 'price', parseFloat(e.target.value) || 0)}
+                      className="border-rose-200"
+                      step="0.01"
+                    />
+                    <Input
+                      placeholder="Unidad (Opcional)"
+                      value={variant.unit || ''}
+                      onChange={(e) => updateVariant(index, 'unit', e.target.value)}
+                      className="border-rose-200"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => removeVariant(index)}
+                    className="border-red-300 text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              {variants.length === 0 && (
+                <p className="text-xs text-gray-500 italic">No hay variantes agregadas</p>
+              )}
+            </div>
           </div>
 
           <DialogFooter>
@@ -417,3 +562,4 @@ export default function AdminProductosPage() {
     </div>
   )
 }
+

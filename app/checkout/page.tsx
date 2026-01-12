@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ShoppingCart, CreditCard, Smartphone, DollarSign, MapPin, Check, Store, Clock } from "lucide-react"
@@ -12,8 +12,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/lib/cart-store"
+import { useAuthStore } from "@/lib/auth-store"
+import { ordersService } from "@/lib/api/services"
 import { cn } from "@/lib/utils"
 import { Header } from "@/components/header"
+import { Price } from "@/components/ui/price"
 
 const deliveryZones = [
   { id: "zona1", name: "Zona 1 - Centro", cost: 5.0, estimatedTime: "30-45 min" },
@@ -34,12 +37,20 @@ const pickupTimes = [
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, getTotalPrice, clearCart, getTotalItems } = useCartStore()
+  const { user, isAuthenticated, isHydrated } = useAuthStore()
   const [step, setStep] = useState(1)
   const [deliveryZone, setDeliveryZone] = useState("")
   const [paymentMethod, setPaymentMethod] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery")
   const [pickupTime, setPickupTime] = useState("")
+
+  // Check authentication
+  useEffect(() => {
+    if (isHydrated && !isAuthenticated) {
+      router.push("/login?redirect=/checkout")
+    }
+  }, [isHydrated, isAuthenticated, router])
 
   const [deliveryInfo, setDeliveryInfo] = useState({
     name: "",
@@ -63,10 +74,49 @@ export default function CheckoutPage() {
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true)
-    // Simulate order processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    clearCart()
-    router.push("/order-success")
+    try {
+      // Mapear método de pago al formato del backend
+      const paymentMethodMap = {
+        card: "tarjeta",
+        mobile: "pago_movil",
+        cash: "efectivo",
+      } as const
+
+      // Crear pedido
+      const orderData = {
+        userId: user?.id,
+        customerName: deliveryInfo.name,
+        customerEmail: user?.email || "",
+        customerPhone: deliveryInfo.phone,
+        items: items.map((item) => ({
+          productId: item.id,
+          productName: item.name,
+          productImage: item.image || "",
+          quantity: item.quantity,
+          unitPrice: item.price,
+          totalPrice: item.price * item.quantity,
+          customizations: item.customizations,
+        })),
+        subtotal: subtotal,
+        deliveryCost: deliveryCost,
+        total: total,
+        deliveryType: deliveryType,
+        deliveryAddress: deliveryType === "delivery" ? deliveryInfo.address : undefined,
+        deliveryZone: deliveryType === "delivery" ? selectedZone?.name : undefined,
+        pickupTime: deliveryType === "pickup" ? selectedPickupTime?.name : undefined,
+        paymentMethod: paymentMethodMap[paymentMethod as keyof typeof paymentMethodMap],
+        notes: deliveryInfo.reference || undefined,
+      }
+
+      await ordersService.create(orderData)
+      clearCart()
+      router.push("/order-success")
+    } catch (error) {
+      console.error("Error al crear pedido:", error)
+      alert("Hubo un error al procesar tu pedido. Por favor intenta de nuevo.")
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   if (items.length === 0) {
@@ -244,7 +294,7 @@ export default function CheckoutPage() {
                           <SelectContent>
                             {deliveryZones.map((zone) => (
                               <SelectItem key={zone.id} value={zone.id}>
-                                {zone.name} - ${zone.cost.toFixed(2)} ({zone.estimatedTime})
+                                {zone.name} - <Price value={zone.cost} showSymbol={true} /> ({zone.estimatedTime})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -580,7 +630,7 @@ export default function CheckoutPage() {
                         )}
                         <p className="text-xs text-gray-600">Cantidad: {item.quantity}</p>
                         <p className="text-sm font-semibold text-rose-600">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          <Price value={Number(item.price) * item.quantity} />
                           {item.discount && <span className="text-xs text-green-600 ml-1">({item.discount}% OFF)</span>}
                         </p>
                       </div>
@@ -593,12 +643,12 @@ export default function CheckoutPage() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal ({getTotalItems()} items)</span>
-                    <span className="font-medium">${subtotal.toFixed(2)}</span>
+                    <span className="font-medium"><Price value={subtotal} /></span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">{deliveryType === "delivery" ? "Envío" : "Retiro en Tienda"}</span>
                     <span className="font-medium">
-                      {deliveryType === "delivery" ? `$${deliveryCost.toFixed(2)}` : "Gratis"}
+                      {deliveryType === "delivery" ? <Price value={deliveryCost} /> : "Gratis"}
                     </span>
                   </div>
                 </div>
@@ -607,7 +657,7 @@ export default function CheckoutPage() {
 
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-gray-900">Total</span>
-                  <span className="text-2xl font-bold text-rose-600">${total.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-rose-600"><Price value={total} /></span>
                 </div>
               </CardContent>
             </Card>

@@ -231,7 +231,7 @@ export default function ProductoPage() {
                             {variant.type}
                           </Label>
                         </div>
-                        <span className="font-bold text-rose-600">${variant.price.toFixed(2)}</span>
+                        <span className="font-bold text-rose-600">${Number(variant.price).toFixed(2)}</span>
                       </div>
                     ))}
                   </RadioGroup>

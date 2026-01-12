@@ -12,55 +12,18 @@ import { useCartStore } from "@/lib/cart-store"
 import { useAuthStore } from "@/lib/auth-store"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { cn } from "@/lib/utils"
+import { ordersService } from "@/lib/api/services"
+import type { Order } from "@/lib/api/types"
 
-// Mock data - En producción vendría de una base de datos
-const mockOrders = [
-  {
-    id: "ORD-001",
-    date: "2025-01-10",
-    status: "delivered",
-    items: [
-      { name: "Torta de Chocolate", quantity: 1, price: 45.0 },
-      { name: "Galletas Artesanales", quantity: 2, price: 15.0 },
-    ],
-    total: 82.5,
-    deliveryZone: "Zona 1 - Centro",
-    deliveryCost: 5.0,
-  },
-  {
-    id: "ORD-002",
-    date: "2025-01-08",
-    status: "in-transit",
-    items: [
-      { name: "Cheesecake de Fresa", quantity: 1, price: 38.0 },
-      { name: "Brownie Premium", quantity: 1, price: 22.0 },
-    ],
-    total: 67.5,
-    deliveryZone: "Zona 2 - Norte",
-    deliveryCost: 7.5,
-  },
-  {
-    id: "ORD-003",
-    date: "2025-01-05",
-    status: "preparing",
-    items: [
-      { name: "Macarons Franceses", quantity: 1, price: 28.0 },
-      { name: "Tiramisú Clásico", quantity: 1, price: 35.0 },
-    ],
-    total: 73.0,
-    deliveryZone: "Zona 1 - Centro",
-    deliveryCost: 5.0,
-  },
-  {
-    id: "ORD-004",
-    date: "2025-01-03",
-    status: "received",
-    items: [{ name: "Torta Red Velvet", quantity: 1, price: 48.0 }],
-    total: 58.0,
-    deliveryZone: "Zona 3 - Sur",
-    deliveryCost: 7.5,
-  },
-]
+// Mapeo de estados del backend a estados del frontend
+const statusMapping = {
+  recibido: "received",
+  en_preparacion: "preparing",
+  en_camino: "in-transit",
+  entregado: "delivered",
+  listo: "preparing",
+  cancelado: "cancelled",
+} as const
 
 const statusConfig = {
   received: {
@@ -87,6 +50,12 @@ const statusConfig = {
     color: "bg-green-100 text-green-700 border-green-200",
     description: "Pedido entregado exitosamente",
   },
+  cancelled: {
+    label: "Cancelado",
+    icon: Package,
+    color: "bg-red-100 text-red-700 border-red-200",
+    description: "Pedido cancelado",
+  },
 }
 
 export default function ProfilePage() {
@@ -95,10 +64,33 @@ export default function ProfilePage() {
   const [cartOpen, setCartOpen] = useState(false)
   const { getTotalItems } = useCartStore()
   const [activeTab, setActiveTab] = useState("all")
+  const [orders, setOrders] = useState<Order[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Cargar pedidos del usuario
+  useEffect(() => {
+    const loadOrders = async () => {
+      if (user?.id) {
+        try {
+          setIsLoading(true)
+          const userOrders = await ordersService.getByUser(user.id)
+          setOrders(userOrders)
+        } catch (error) {
+          console.error("Error al cargar pedidos:", error)
+        } finally {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    if (isAuthenticated && user) {
+      loadOrders()
+    }
+  }, [user, isAuthenticated])
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== "usuario") {
-      router.push("/login")
+      return
     }
   }, [isAuthenticated, user, router])
 
@@ -111,7 +103,15 @@ export default function ProfilePage() {
     router.push("/")
   }
 
-  const filteredOrders = activeTab === "all" ? mockOrders : mockOrders.filter((order) => order.status === activeTab)
+  // Mapear pedidos al formato esperado por la UI
+  const mappedOrders = orders.map((order) => ({
+    ...order,
+    status: statusMapping[order.status as keyof typeof statusMapping] || "received",
+  }))
+
+  const filteredOrders =
+    activeTab === "all" ? mappedOrders : mappedOrders.filter((order) => order.status === activeTab)
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
@@ -209,10 +209,17 @@ export default function ProfilePage() {
                 </TabsList>
 
                 <TabsContent value={activeTab} className="space-y-4">
-                  {filteredOrders.length === 0 ? (
+                  {isLoading ? (
+                    <div className="text-center py-12">
+                      <Package className="h-16 w-16 text-gray-300 mx-auto mb-4 animate-pulse" />
+                      <p className="text-gray-500 text-lg">Cargando pedidos...</p>
+                    </div>
+                  ) : filteredOrders.length === 0 ? (
                     <div className="text-center py-12">
                       <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 text-lg">No hay pedidos en esta categoría</p>
+                      <p className="text-gray-500 text-lg">
+                        {activeTab === "all" ? "No tienes pedidos aún" : "No hay pedidos en esta categoría"}
+                      </p>
                     </div>
                   ) : (
                     filteredOrders.map((order) => {
@@ -227,9 +234,9 @@ export default function ProfilePage() {
                               <div className="flex-1">
                                 <div className="flex items-start justify-between mb-4">
                                   <div>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-1">Pedido #{order.id}</h3>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-1">Pedido #{order.orderNumber}</h3>
                                     <p className="text-sm text-gray-600">
-                                      Fecha: {new Date(order.date).toLocaleDateString("es-ES")}
+                                      Fecha: {new Date(order.createdAt).toLocaleDateString("es-ES")}
                                     </p>
                                   </div>
                                   <Badge className={cn("flex items-center gap-1 border", status.color)}>
@@ -243,10 +250,10 @@ export default function ProfilePage() {
                                   {order.items.map((item, idx) => (
                                     <div key={idx} className="flex justify-between text-sm">
                                       <span className="text-gray-700">
-                                        {item.quantity}x {item.name}
+                                        {item.quantity}x {item.productName}
                                       </span>
                                       <span className="font-medium text-gray-900">
-                                        ${(item.price * item.quantity).toFixed(2)}
+                                        ${Number(item.totalPrice).toFixed(2)}
                                       </span>
                                     </div>
                                   ))}
@@ -254,12 +261,14 @@ export default function ProfilePage() {
 
                                 {/* Delivery Info */}
                                 <div className="text-sm text-gray-600 mb-4">
-                                  <p>
-                                    <span className="font-medium">Zona de entrega:</span> {order.deliveryZone}
-                                  </p>
+                                  {order.deliveryZone && (
+                                    <p>
+                                      <span className="font-medium">Zona de entrega:</span> {order.deliveryZone}
+                                    </p>
+                                  )}
                                   <p>
                                     <span className="font-medium">Costo de envío:</span> $
-                                    {order.deliveryCost.toFixed(2)}
+                                    {Number(order.deliveryCost).toFixed(2)}
                                   </p>
                                 </div>
 
@@ -274,7 +283,7 @@ export default function ProfilePage() {
                               <div className="lg:border-l lg:border-rose-100 lg:pl-6 flex flex-col justify-between">
                                 <div>
                                   <p className="text-sm text-gray-600 mb-1">Total del Pedido</p>
-                                  <p className="text-3xl font-bold text-rose-600">${order.total.toFixed(2)}</p>
+                                  <p className="text-3xl font-bold text-rose-600">${Number(order.total).toFixed(2)}</p>
                                 </div>
                                 <div className="space-y-2 mt-4">
                                   <Button

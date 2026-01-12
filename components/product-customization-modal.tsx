@@ -39,76 +39,76 @@ export function ProductCustomizationModal({ product, isOpen, onClose, onAddToCar
   const sizeOptions =
     product.category === "fresas"
       ? [
-          { id: "small", name: "Pequeño", price: 0 },
-          { id: "medium", name: "Mediano", price: 3 },
-          { id: "large", name: "Grande", price: 6 },
-        ]
+        { id: "small", name: "Pequeño", price: 0 },
+        { id: "medium", name: "Mediano", price: 3 },
+        { id: "large", name: "Grande", price: 6 },
+      ]
       : []
 
   const toppingOptions =
     product.category === "fresas"
       ? [
-          { id: "peanuts", name: "Maní", price: 1 },
-          { id: "condensed", name: "Leche Condensada", price: 1.5 },
-          { id: "granola", name: "Granola", price: 1 },
-          { id: "cookies", name: "Galleta", price: 1.5 },
-        ]
+        { id: "peanuts", name: "Maní", price: 1 },
+        { id: "condensed", name: "Leche Condensada", price: 1.5 },
+        { id: "granola", name: "Granola", price: 1 },
+        { id: "cookies", name: "Galleta", price: 1.5 },
+      ]
       : product.category === "donas"
         ? [
-            { id: "coconut", name: "Coco", price: 0.5 },
-            { id: "peanuts", name: "Maní", price: 0.5 },
-            { id: "sprinkles", name: "Chispas", price: 0.5 },
-          ]
+          { id: "coconut", name: "Coco", price: 0.5 },
+          { id: "peanuts", name: "Maní", price: 0.5 },
+          { id: "sprinkles", name: "Chispas", price: 0.5 },
+        ]
         : []
 
   const glazeOptions =
     product.category === "donas"
       ? [
-          { id: "chocolate", name: "Chocolate", price: 0 },
-          { id: "vanilla", name: "Vainilla", price: 0 },
-          { id: "strawberry", name: "Fresa", price: 0 },
-          { id: "caramel", name: "Caramelo", price: 0.5 },
-        ]
+        { id: "chocolate", name: "Chocolate", price: 0 },
+        { id: "vanilla", name: "Vainilla", price: 0 },
+        { id: "strawberry", name: "Fresa", price: 0 },
+        { id: "caramel", name: "Caramelo", price: 0.5 },
+      ]
       : []
 
   const doughTypeOptions =
     product.category === "donas"
       ? [
-          { id: "traditional", name: "Tradicional", price: 0 },
-          { id: "filled", name: "Rellena", price: 1.5 },
-        ]
+        { id: "traditional", name: "Tradicional", price: 0 },
+        { id: "filled", name: "Rellena", price: 1.5 },
+      ]
       : []
 
   const portionOptions =
     product.category === "tortas"
       ? [
-          { id: "slice", name: "Porción", price: 0 },
-          { id: "whole", name: "Torta Completa", price: 35 },
-        ]
+        { id: "slice", name: "Porción", price: 0 },
+        { id: "whole", name: "Torta Completa", price: 35 },
+      ]
       : []
 
   const fillingOptions =
     product.category === "tortas"
       ? [
-          { id: "chocolate", name: "Chocolate", price: 0 },
-          { id: "vanilla", name: "Vainilla", price: 0 },
-          { id: "dulce", name: "Dulce de Leche", price: 2 },
-          { id: "fruit", name: "Frutas", price: 2 },
-        ]
+        { id: "chocolate", name: "Chocolate", price: 0 },
+        { id: "vanilla", name: "Vainilla", price: 0 },
+        { id: "dulce", name: "Dulce de Leche", price: 2 },
+        { id: "fruit", name: "Frutas", price: 2 },
+      ]
       : []
 
   const coveringOptions =
     product.category === "tortas"
       ? [
-          { id: "buttercream", name: "Buttercream", price: 0 },
-          { id: "fondant", name: "Fondant", price: 5 },
-          { id: "ganache", name: "Ganache", price: 3 },
-        ]
+        { id: "buttercream", name: "Buttercream", price: 0 },
+        { id: "fondant", name: "Fondant", price: 5 },
+        { id: "ganache", name: "Ganache", price: 3 },
+      ]
       : []
 
   // Calculate final price
   const calculatePrice = () => {
-    let price = product.basePrice || product.price
+    let price = Number(product.basePrice || product.price)
 
     // Add size price
     if (selectedSize) {
@@ -201,7 +201,7 @@ export function ProductCustomizationModal({ product, isOpen, onClose, onAddToCar
             <div className="flex-1">
               <h3 className="text-xl font-semibold text-gray-900">{product.name}</h3>
               <p className="text-sm text-gray-600 mt-1">
-                Precio base: ${(product.basePrice || product.price).toFixed(2)}
+                Precio base: ${Number(product.basePrice || product.price).toFixed(2)}
               </p>
             </div>
           </div>

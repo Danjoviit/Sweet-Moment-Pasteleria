@@ -137,9 +137,8 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                   return (
                     <div key={status} className="flex flex-col items-center flex-1">
                       <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          isActive ? "bg-rose-500 text-white" : "bg-gray-200 text-gray-400"
-                        } ${isCurrent ? "ring-4 ring-rose-200" : ""}`}
+                        className={`w-10 h-10 rounded-full flex items-center justify-center ${isActive ? "bg-rose-500 text-white" : "bg-gray-200 text-gray-400"
+                          } ${isCurrent ? "ring-4 ring-rose-200" : ""}`}
                       >
                         <Icon className="h-5 w-5" />
                       </div>
@@ -200,7 +199,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
                         </div>
                       )}
                     </div>
-                    <p className="font-medium">${item.totalPrice.toFixed(2)}</p>
+                    <p className="font-medium">${Number(item.totalPrice).toFixed(2)}</p>
                   </div>
                 ))}
               </div>
@@ -210,16 +209,16 @@ export default function OrderDetailPage({ params }: { params: Promise<{ orderId:
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Subtotal</span>
-                  <span>${order.subtotal.toFixed(2)}</span>
+                  <span>${Number(order.subtotal).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">Envío</span>
-                  <span>{order.deliveryCost > 0 ? `$${order.deliveryCost.toFixed(2)}` : "Gratis"}</span>
+                  <span>{Number(order.deliveryCost) > 0 ? `$${Number(order.deliveryCost).toFixed(2)}` : "Gratis"}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span className="text-rose-600">${order.total.toFixed(2)}</span>
+                  <span className="text-rose-600">${Number(order.total).toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>

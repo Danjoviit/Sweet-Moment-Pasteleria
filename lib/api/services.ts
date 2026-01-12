@@ -35,6 +35,15 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
     throw new Error(`API Error: ${response.status}`)
   }
 
+  // Check if response has content before parsing JSON
+  const contentType = response.headers.get("content-type")
+  const contentLength = response.headers.get("content-length")
+
+  // If no content or empty response (like 204 No Content), return null
+  if (!contentType || contentLength === "0" || response.status === 204) {
+    return null as T
+  }
+
   return response.json()
 }
 
@@ -82,7 +91,11 @@ export const categoriesService = {
 export const productsService = {
   getAll: async (): Promise<Product[]> => {
     if (USE_MOCK_DATA) return mockProducts.filter((p) => p.isActive)
-    return fetchApi<Product[]>("/products/")
+    const response = await fetchApi<any>("/products/")
+    if (response && response.results && Array.isArray(response.results)) {
+      return response.results
+    }
+    return Array.isArray(response) ? response : []
   },
 
   getByCategory: async (categoryId: string): Promise<Product[]> => {
@@ -100,22 +113,68 @@ export const productsService = {
     return fetchApi<Product>(`/products/slug/${slug}/`)
   },
 
-  create: async (data: Partial<Product>): Promise<Product> => {
+  create: async (data: Partial<Product> | FormData): Promise<Product> => {
     if (USE_MOCK_DATA) {
       const newProduct = { ...data, id: Date.now(), isActive: true } as Product
       mockProducts.push(newProduct)
       return newProduct
     }
-    return fetchApi<Product>("/products/", { method: "POST", body: JSON.stringify(data) })
+
+    // Si es FormData, no agregar Content-Type (el browser lo hace automáticamente con boundary)
+    const isFormData = data instanceof FormData
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null
+
+    const headers: Record<string, string> = {}
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+    }
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json"
+    }
+
+    const response = await fetch(apiUrl("/products/"), {
+      method: "POST",
+      headers,
+      body: isFormData ? data : JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`)
+    }
+
+    return response.json()
   },
 
-  update: async (id: number, data: Partial<Product>): Promise<Product> => {
+  update: async (id: number, data: Partial<Product> | FormData): Promise<Product> => {
     if (USE_MOCK_DATA) {
       const index = mockProducts.findIndex((p) => p.id === id)
       if (index !== -1) mockProducts[index] = { ...mockProducts[index], ...data }
       return mockProducts[index]
     }
-    return fetchApi<Product>(`/products/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
+
+    // Si es FormData, no agregar Content-Type
+    const isFormData = data instanceof FormData
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth-token") : null
+
+    const headers: Record<string, string> = {}
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+    }
+    if (!isFormData) {
+      headers["Content-Type"] = "application/json"
+    }
+
+    const response = await fetch(apiUrl(`/products/${id}/`), {
+      method: "PATCH",
+      headers,
+      body: isFormData ? data : JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`)
+    }
+
+    return response.json()
   },
 
   updateStock: async (id: number, stock: number): Promise<Product> => {
@@ -136,7 +195,11 @@ export const productsService = {
 export const ordersService = {
   getAll: async (): Promise<Order[]> => {
     if (USE_MOCK_DATA) return mockOrders
-    return fetchApi<Order[]>("/orders/")
+    const response = await fetchApi<any>("/orders/")
+    if (response && response.results && Array.isArray(response.results)) {
+      return response.results
+    }
+    return Array.isArray(response) ? response : []
   },
 
   getByStatus: async (status: Order["status"]): Promise<Order[]> => {
@@ -190,7 +253,13 @@ export const ordersService = {
 export const usersService = {
   getAll: async (): Promise<User[]> => {
     if (USE_MOCK_DATA) return mockUsers
-    return fetchApi<User[]>("/users/")
+    const response = await fetchApi<any>("/users/")
+    // Handle paginated response structure from Django Rest Framework
+    if (response && response.results && Array.isArray(response.results)) {
+      return response.results
+    }
+    // Handle direct array response (if pagination is disabled)
+    return Array.isArray(response) ? response : []
   },
 
   getById: async (id: number): Promise<User | undefined> => {
@@ -220,18 +289,58 @@ export const usersService = {
     }
     return fetchApi<User>(`/users/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
   },
+
+  delete: async (id: number): Promise<void> => {
+    if (USE_MOCK_DATA) {
+      const index = mockUsers.findIndex((u) => u.id === id)
+      if (index !== -1) mockUsers.splice(index, 1)
+      return
+    }
+    await fetchApi(`/users/${id}/`, { method: "DELETE" })
+  },
 }
 
 // ==================== ZONAS DE DELIVERY ====================
 export const deliveryZonesService = {
   getAll: async (): Promise<DeliveryZone[]> => {
     if (USE_MOCK_DATA) return mockDeliveryZones.filter((z) => z.isActive)
-    return fetchApi<DeliveryZone[]>("/delivery-zones/")
+    const response = await fetchApi<any>("/delivery-zones/")
+    if (response && response.results && Array.isArray(response.results)) {
+      return response.results
+    }
+    return Array.isArray(response) ? response : []
   },
 
   getById: async (id: string): Promise<DeliveryZone | undefined> => {
     if (USE_MOCK_DATA) return mockDeliveryZones.find((z) => z.id === id)
     return fetchApi<DeliveryZone>(`/delivery-zones/${id}/`)
+  },
+
+  create: async (data: Partial<DeliveryZone>): Promise<DeliveryZone> => {
+    if (USE_MOCK_DATA) {
+      const newZone = { ...data, id: Date.now().toString(), isActive: true } as DeliveryZone
+      mockDeliveryZones.push(newZone)
+      return newZone
+    }
+    return fetchApi<DeliveryZone>("/delivery-zones/", { method: "POST", body: JSON.stringify(data) })
+  },
+
+  update: async (id: number, data: Partial<DeliveryZone>): Promise<DeliveryZone> => {
+    if (USE_MOCK_DATA) {
+      const index = mockDeliveryZones.findIndex((z) => z.id === id.toString())
+      if (index !== -1) mockDeliveryZones[index] = { ...mockDeliveryZones[index], ...data }
+      return mockDeliveryZones[index]
+    }
+    return fetchApi<DeliveryZone>(`/delivery-zones/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
+  },
+
+  delete: async (id: number): Promise<void> => {
+    if (USE_MOCK_DATA) {
+      const index = mockDeliveryZones.findIndex((z) => z.id === id.toString())
+      if (index !== -1) mockDeliveryZones.splice(index, 1)
+      return
+    }
+    await fetchApi(`/delivery-zones/${id}/`, { method: "DELETE" })
   },
 }
 
@@ -239,12 +348,43 @@ export const deliveryZonesService = {
 export const promotionsService = {
   getAll: async (): Promise<Promotion[]> => {
     if (USE_MOCK_DATA) return mockPromotions.filter((p) => p.isActive)
-    return fetchApi<Promotion[]>("/promotions/")
+    const response = await fetchApi<any>("/promotions/")
+    if (response && response.results && Array.isArray(response.results)) {
+      return response.results
+    }
+    return Array.isArray(response) ? response : []
   },
 
   getByCode: async (code: string): Promise<Promotion | undefined> => {
     if (USE_MOCK_DATA) return mockPromotions.find((p) => p.code === code && p.isActive)
     return fetchApi<Promotion>(`/promotions/code/${code}/`)
+  },
+
+  create: async (data: Partial<Promotion>): Promise<Promotion> => {
+    if (USE_MOCK_DATA) {
+      const newPromo = { ...data, id: Date.now(), isActive: true } as Promotion
+      mockPromotions.push(newPromo)
+      return newPromo
+    }
+    return fetchApi<Promotion>("/promotions/", { method: "POST", body: JSON.stringify(data) })
+  },
+
+  update: async (id: number, data: Partial<Promotion>): Promise<Promotion> => {
+    if (USE_MOCK_DATA) {
+      const index = mockPromotions.findIndex((p) => p.id === id)
+      if (index !== -1) mockPromotions[index] = { ...mockPromotions[index], ...data }
+      return mockPromotions[index]
+    }
+    return fetchApi<Promotion>(`/promotions/${id}/`, { method: "PATCH", body: JSON.stringify(data) })
+  },
+
+  delete: async (id: number): Promise<void> => {
+    if (USE_MOCK_DATA) {
+      const index = mockPromotions.findIndex((p) => p.id === id)
+      if (index !== -1) mockPromotions.splice(index, 1)
+      return
+    }
+    await fetchApi(`/promotions/${id}/`, { method: "DELETE" })
   },
 }
 
@@ -252,7 +392,8 @@ export const promotionsService = {
 export const dashboardService = {
   getStats: async (): Promise<DashboardStats> => {
     if (USE_MOCK_DATA) return mockDashboardStats
-    return fetchApi<DashboardStats>("/dashboard/stats/")
+    const response = await fetchApi<DashboardStats>("/dashboard/stats/")
+    return response
   },
 }
 
@@ -351,3 +492,18 @@ export const favoritesService = {
     await fetchApi(`/favorites/${productId}/`, { method: "DELETE" })
   },
 }
+
+// ==================== EXCHANGE RATE ====================
+export const exchangeRateService = {
+  get: async (): Promise<import("./types").ExchangeRate> => {
+    return fetchApi<import("./types").ExchangeRate>("/exchange-rate/")
+  },
+
+  update: async (usdToBs: number): Promise<import("./types").ExchangeRate> => {
+    return fetchApi<import("./types").ExchangeRate>("/exchange-rate/update/", {
+      method: "PATCH",
+      body: JSON.stringify({ usdToBs }),
+    })
+  },
+}
+

@@ -143,3 +143,15 @@ export interface Review {
   createdAt: string
   isVerifiedPurchase: boolean
 }
+
+export interface ExchangeRate {
+  id: number
+  usdToBs: number
+  updatedAt: string
+  updatedBy?: {
+    id: number
+    name: string
+    email: string
+  }
+}
+

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { useCartStore } from "@/lib/cart-store"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { Price } from "@/components/ui/price"
 
 interface CartSidebarProps {
   isOpen: boolean
@@ -61,7 +62,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
-                      <p className="text-rose-600 font-bold mb-2">${item.price.toFixed(2)}</p>
+                      <p className="text-rose-600 font-bold mb-2"><Price value={item.price} /></p>
                       <div className="flex items-center gap-2">
                         <Button
                           size="icon"
@@ -102,7 +103,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
           <div className="border-t border-rose-100 p-6 bg-rose-50">
             <div className="flex items-center justify-between mb-4">
               <span className="text-lg font-semibold text-gray-900">Subtotal:</span>
-              <span className="text-2xl font-bold text-rose-600">${getTotalPrice().toFixed(2)}</span>
+              <span className="text-2xl font-bold text-rose-600"><Price value={getTotalPrice()} /></span>
             </div>
             <Link href="/checkout" onClick={onClose}>
               <Button className="w-full bg-rose-500 hover:bg-rose-600 text-white py-6 text-lg">Finalizar Compra</Button>

@@ -188,7 +188,7 @@ export default function PedidosPage() {
                       <div className="flex items-center gap-4">
                         <div className="text-right">
                           <p className="text-sm text-gray-500">Total</p>
-                          <p className="text-xl font-bold text-gray-900">${order.total.toFixed(2)}</p>
+                          <p className="text-xl font-bold text-gray-900">${Number(order.total).toFixed(2)}</p>
                         </div>
                         <Button variant="ghost" size="icon">
                           <ChevronRight className="h-5 w-5" />

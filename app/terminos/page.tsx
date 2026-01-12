@@ -33,7 +33,7 @@ export default function TerminosPage() {
             </CardHeader>
             <CardContent className="prose prose-gray max-w-none">
               <ul>
-                <li>Todos los precios están expresados en dólares americanos (USD).</li>
+                <li>Todos los precios están expresados en bolívares (Bs).</li>
                 <li>El pago debe realizarse al momento de confirmar el pedido.</li>
                 <li>Aceptamos pagos mediante tarjeta de crédito/débito, pago móvil y efectivo.</li>
                 <li>Los pedidos están sujetos a disponibilidad de inventario.</li>

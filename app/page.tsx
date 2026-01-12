@@ -124,7 +124,7 @@ export default function HomePage() {
                 <CardContent className="p-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-rose-600">${product.price.toFixed(2)}</span>
+                    <span className="text-2xl font-bold text-rose-600">${Number(product.price).toFixed(2)}</span>
                     <Button className="bg-rose-500 hover:bg-rose-600 text-white" onClick={() => addItem(product)}>
                       Añadir
                     </Button>

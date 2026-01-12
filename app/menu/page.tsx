@@ -12,6 +12,7 @@ import { ProductCustomizationModal } from "@/components/product-customization-mo
 import { Header } from "@/components/header"
 import { categoriesService, productsService } from "@/lib/api"
 import type { Category, Product } from "@/lib/api"
+import { Price } from "@/components/ui/price"
 
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -313,7 +314,7 @@ export default function MenuPage() {
                         <div className="flex flex-wrap gap-1 mb-3">
                           {product.variants.slice(0, 2).map((variant) => (
                             <span key={variant.id} className="text-xs bg-rose-50 text-rose-600 px-2 py-1 rounded-full">
-                              {variant.type}: ${variant.price}
+                              {variant.type}: <Price value={variant.price} />
                             </span>
                           ))}
                           {product.variants.length > 2 && (
@@ -328,7 +329,7 @@ export default function MenuPage() {
                       <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
                         <div>
                           <span className="text-2xl font-bold text-gray-900">
-                            ${(product.price || product.basePrice || 0).toFixed(2)}
+                            <Price value={product.price || product.basePrice || 0} />
                           </span>
                           {product.unit && <span className="text-sm text-gray-500 ml-1">/{product.unit}</span>}
                         </div>

@@ -30,7 +30,7 @@ export function Header() {
   const getDashboardLink = () => {
     if (!user) return "/perfil"
     switch (user.role) {
-      case "administrador":
+      case "admin":
         return "/admin"
       case "recepcionista":
         return "/recepcionista"
@@ -51,20 +51,33 @@ export function Header() {
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center gap-8">
-              <Link href="/menu" className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
-                Menú
-              </Link>
-              <Link href="/nosotros" className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
-                Nosotros
-              </Link>
-              <Link href="/contacto" className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
-                Contacto
-              </Link>
+              {user?.role === "admin" || user?.role === "recepcionista" ? (
+                <>
+                  <Link href={user.role === "admin" ? "/admin" : "/recepcionista"} className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
+                    Panel de Control
+                  </Link>
+                  <Link href="/menu" className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
+                    Menú
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/menu" className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
+                    Menú
+                  </Link>
+                  <Link href="/nosotros" className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
+                    Nosotros
+                  </Link>
+                  <Link href="/contacto" className="text-gray-700 hover:text-rose-600 font-medium transition-colors">
+                    Contacto
+                  </Link>
+                </>
+              )}
             </nav>
 
             {/* Right side actions */}
             <div className="flex items-center gap-2">
-              {isAuthenticated && <NotificationsDropdown />}
+              {isAuthenticated && user?.role === "usuario" && <NotificationsDropdown />}
 
               <Button
                 variant="ghost"
