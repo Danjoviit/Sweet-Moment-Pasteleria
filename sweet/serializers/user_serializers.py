@@ -3,9 +3,47 @@ from ..models import User, Address, DeliveryZone, Promotion
 
 
 class UserSerializers(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False)
+
     class Meta:
         model = User
-        fields = ['id', 'email', 'name', 'phone', 'role', 'avatar']
+        fields = ['id', 'email', 'name', 'phone', 'role', 'avatar', 'password']
+
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        email = validated_data.get('email')
+        
+        # Ensure username is set to email
+        validated_data['username'] = email
+        
+        # Create user instance but don't save yet if using create_user? 
+        # Actually create_user handles hashing, but we need to pass extra fields.
+        # Let's use standard create logic extended.
+        
+        user = User.objects.create(**validated_data)
+        
+        if password:
+            user.set_password(password)
+            user.save()
+            
+        return user
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        
+        # Update standard fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+            
+        # Sync username with email if email changed
+        if 'email' in validated_data:
+            instance.username = validated_data['email']
+
+        if password:
+            instance.set_password(password)
+            
+        instance.save()
+        return instance
 
 
 class RegisterSerializer(serializers.ModelSerializer):

@@ -182,7 +182,7 @@ def favorite_detail(request, product_id):
 
 # ============ ZONAS DE ENTREGA ============
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
 @permission_classes([AllowAny])
 def delivery_zone_detail(request, pk):
     zone = get_object_or_404(DeliveryZone, pk=pk)
@@ -190,6 +190,23 @@ def delivery_zone_detail(request, pk):
     if request.method == 'GET':
         serializer = DeliveryZoneSerializer(zone)
         return Response(serializer.data)
+
+    elif request.method in ['PUT', 'PATCH']:
+        if not request.user.is_authenticated or request.user.role != 'admin':
+             return Response(status=status.HTTP_403_FORBIDDEN)
+        
+        serializer = DeliveryZoneSerializer(zone, data=request.data, partial=request.method == 'PATCH')
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        if not request.user.is_authenticated or request.user.role != 'admin':
+             return Response(status=status.HTTP_403_FORBIDDEN)
+        
+        zone.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['GET', 'POST'])
@@ -248,6 +265,33 @@ def promotion_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def promotion_detail(request, pk):
+    try:
+        promotion = Promotion.objects.get(pk=pk)
+    except Promotion.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = PromotionSerializer(promotion)
+        return Response(serializer.data)
+
+    elif request.method in ['PUT', 'PATCH']:
+        if not request.user.is_staff:  # Solo staff puede editar
+             return Response(status=status.HTTP_403_FORBIDDEN)
+        serializer = PromotionSerializer(promotion, data=request.data, partial=request.method == 'PATCH')
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        if not request.user.is_staff: # Solo staff puede eliminar
+             return Response(status=status.HTTP_403_FORBIDDEN)
+        promotion.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def promotion_detail_by_code(request, code):
@@ -293,7 +337,7 @@ def dashboard_stats(request):
         "pendingOrders": pending_orders,
         "completedOrders": completed_orders,
         "totalUsers": total_users,
-        "lowStocProducts": low_stock_products,
+        "lowStockProducts": low_stock_products,
         "preparingOrders": preparing_orders
     }
 

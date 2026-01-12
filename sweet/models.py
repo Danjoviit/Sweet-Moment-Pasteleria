@@ -315,3 +315,45 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.title}"
+
+class ExchangeRate(models.Model):
+    """
+    Singleton model to store the USD to Bolivares exchange rate.
+    Only one record should exist at any time.
+    """
+    usd_to_bs = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        help_text="Tasa de cambio de USD a Bolívares"
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='exchange_rate_updates'
+    )
+
+    class Meta:
+        db_table = 'exchange_rate'
+        verbose_name = 'Exchange Rate'
+        verbose_name_plural = 'Exchange Rate'
+
+    def save(self, *args, **kwargs):
+        # Ensure only one record exists (singleton pattern)
+        if not self.pk and ExchangeRate.objects.exists():
+            raise ValueError("Solo puede existir un registro de tasa de cambio")
+        return super().save(*args, **kwargs)
+
+    @classmethod
+    def get_rate(cls):
+        """Get the current exchange rate, create default if doesn't exist"""
+        rate, created = cls.objects.get_or_create(
+            id=1,
+            defaults={'usd_to_bs': 301.65}
+        )
+        return rate
+
+    def __str__(self):
+        return f"1 USD = {self.usd_to_bs} Bs"

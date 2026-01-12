@@ -1,7 +1,7 @@
 # Serializers organizados por módulo
 from .category_serializers import CategoriaSerializer
 from .product_serializers import ProductoSerializer, ProductoVarianteSerializer
-from .order_serializers import OrderSerializer, OrderItemSerializer
+from .order_serializers import OrderSerializer, OrderItemSerializer, OrderStatusSerializer
 from .user_serializers import (
     UserSerializers, 
     RegisterSerializer, 
@@ -18,6 +18,7 @@ __all__ = [
     'ProductoVarianteSerializer',
     'OrderSerializer',
     'OrderItemSerializer',
+    'OrderStatusSerializer',
     'UserSerializers',
     'RegisterSerializer',
     'CustomLoginSerializer',

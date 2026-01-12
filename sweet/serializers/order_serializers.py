@@ -6,7 +6,7 @@ import uuid
 
 class OrderItemSerializer(serializers.ModelSerializer):
 
-    productID = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), source='product')
+    productId = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all(), source='product')
     productName = serializers.CharField(source='product_name')
     productImage = serializers.CharField(source='product_image')
     unitPrice = serializers.DecimalField(source='unit_price', max_digits=10, decimal_places=2)
@@ -14,7 +14,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['productID', 'productName', 'productImage', 'quantity', 'unitPrice', 'totalPrice', 'customizations']
+        fields = ['productId', 'productName', 'productImage', 'quantity', 'unitPrice', 'totalPrice', 'customizations']
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -49,14 +49,14 @@ class OrderSerializer(serializers.ModelSerializer):
     # Campos solamente de lectura
     orderNumber = serializers.CharField(source='order_number', read_only=True)
     status = serializers.CharField(read_only=True)
-    createAt = serializers.DateTimeField(source='created_at', read_only=True)
+    createdAt = serializers.DateTimeField(source='created_at', read_only=True)
 
     class Meta:
         model = Order
         fields = [
             'id', 'orderNumber', 'userId', 'customerName', 'customerEmail', 'customerPhone',
             'items', 'subtotal', 'deliveryCost', 'total', 'deliveryType',
-            'deliveryAddress', 'deliveryZone', 'paymentMethod', 'notes', 
+            'deliveryAddress', 'DeliveryZone', 'paymentMethod', 'notes', 
             'status', 'createdAt'
         ]
 
@@ -73,3 +73,10 @@ class OrderSerializer(serializers.ModelSerializer):
                 OrderItem.objects.create(order=order, **item_data)
 
         return order
+
+class OrderStatusSerializer(serializers.ModelSerializer):
+    status = serializers.ChoiceField(choices=Order.STATUS_CHOICES)
+
+    class Meta:
+        model = Order
+        fields = ['status']
