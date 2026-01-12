@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,7 @@ import { Header } from "@/components/header"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login } = useAuthStore()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -30,20 +31,28 @@ export default function LoginPage() {
       const result = await login(email, password)
 
       if (result.success) {
-        // Obtener el usuario actual para redirigir según su rol
-        const user = useAuthStore.getState().user
-        switch (user?.role) {
-          case "administrador":
-            router.push("/admin")
-            break
-          case "recepcionista":
-            router.push("/recepcionista")
-            break
-          case "usuario":
-            router.push("/perfil")
-            break
-          default:
-            router.push("/")
+        // Check if there's a redirect parameter
+        const redirectPath = searchParams.get('redirect')
+
+        if (redirectPath) {
+          // Redirect to the intended page
+          router.push(redirectPath)
+        } else {
+          // Default: redirect based on user role
+          const user = useAuthStore.getState().user
+          switch (user?.role) {
+            case "admin":
+              router.push("/admin")
+              break
+            case "recepcionista":
+              router.push("/recepcionista")
+              break
+            case "usuario":
+              router.push("/perfil")
+              break
+            default:
+              router.push("/")
+          }
         }
       } else {
         setError(result.error || "Credenciales incorrectas. Intenta de nuevo.")
@@ -114,23 +123,6 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700">
-                  <p className="font-medium mb-2">Credenciales de prueba:</p>
-                  <div className="space-y-1">
-                    <p>
-                      <span className="font-medium">Cliente:</span> usuario@momentosdulces.com
-                    </p>
-                    <p>
-                      <span className="font-medium">Recepcionista:</span> recepcionista@momentosdulces.com
-                    </p>
-                    <p>
-                      <span className="font-medium">Admin:</span> admin@momentosdulces.com
-                    </p>
-                    <p className="mt-2">
-                      <span className="font-medium">Contraseña:</span> 123456
-                    </p>
-                  </div>
-                </div>
 
                 <Button type="submit" className="w-full bg-rose-500 hover:bg-rose-600 text-white" disabled={loading}>
                   {loading ? "Iniciando sesión..." : "Iniciar Sesión"}

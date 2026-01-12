@@ -177,7 +177,7 @@ export default function DireccionesPage() {
                           </div>
                           <p className="text-gray-600 mt-1">{address.address}</p>
                           <p className="text-sm text-gray-500 mt-1">
-                            Zona: {zone?.name || address.zone} - Costo de envío: ${zone?.price.toFixed(2) || "N/A"}
+                            Zona: {zone?.name || address.zone} - Costo de envío: ${zone?.price ? Number(zone.price).toFixed(2) : "N/A"}
                           </p>
                         </div>
                       </div>
@@ -240,7 +240,7 @@ export default function DireccionesPage() {
                 <SelectContent>
                   {zones.map((zone) => (
                     <SelectItem key={zone.id} value={zone.id}>
-                      {zone.name} - ${zone.price.toFixed(2)}
+                      {zone.name} - ${Number(zone.price).toFixed(2)}
                     </SelectItem>
                   ))}
                 </SelectContent>

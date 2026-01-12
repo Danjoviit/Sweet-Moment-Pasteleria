@@ -2,7 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { API_CONFIG } from "./api/config"
 
-export type UserRole = "usuario" | "recepcionista" | "administrador"
+export type UserRole = "usuario" | "recepcionista" | "admin"
 
 export interface UserAddress {
   id: string
@@ -82,7 +82,7 @@ const mockUsersDB: (User & { password: string })[] = [
     name: "Carlos Rodríguez",
     email: "admin@momentosdulces.com",
     password: "123456",
-    role: "administrador",
+    role: "admin",
     phone: "+58 424-333-3333",
     isVerified: true,
     createdAt: new Date().toISOString(),
@@ -473,9 +473,9 @@ export const useAuthStore = create<AuthState>()(
             set((state) => ({
               user: state.user
                 ? {
-                    ...state.user,
-                    addresses: [...(state.user.addresses || []), newAddress],
-                  }
+                  ...state.user,
+                  addresses: [...(state.user.addresses || []), newAddress],
+                }
                 : null,
             }))
 
@@ -600,7 +600,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      partialize: () => ({}),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated
+      }),
       onRehydrateStorage: () => (state) => {
         state?.setHydrated()
       },
