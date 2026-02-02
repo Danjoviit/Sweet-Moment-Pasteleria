@@ -28,7 +28,7 @@ export default function RootLayout({
     <html lang="es">
       <body className="font-sans antialiased">
         <DynamicProductBackground />
-        <div className="relative z-10">
+        <div className="relative z-10 min-h-screen">
           <AuthProvider>
             <CurrencyProvider>
               <Suspense
