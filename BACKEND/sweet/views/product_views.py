@@ -34,7 +34,7 @@ def Product_list(request):
 
 @api_view(['GET', 'PUT', 'DELETE', 'PATCH'])
 def Product_detail(request, pk):
-    product = get_object_or_404(Product, pk=pk)
+    product = get_object_or_404(Product.objects.prefetch_related('variants'), pk=pk)
 
     if request.method == 'GET':
         serializer = ProductoSerializer(product, context={'request': request}) 
@@ -70,7 +70,7 @@ def Product_detail(request, pk):
 
 @api_view(['GET'])
 def Product_detail_by_slug(request, slug):
-    product = get_object_or_404(Product, slug=slug)
+    product = get_object_or_404(Product.objects.prefetch_related('variants'), slug=slug)
     if request.method == 'GET':
         serializer = ProductoSerializer(product, context={'request': request})
         return Response(serializer.data)
