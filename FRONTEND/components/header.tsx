@@ -46,7 +46,7 @@ export function Header() {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
-              <img src="/momentos-dulces-logo.png" alt="Momentos Dulces" className="h-12 w-auto" />
+              <img src="/momentos-dulces-logo.png" alt="Momentos Dulces" className="h-25 w-auto" />
             </Link>
 
             {/* Navigation */}
