@@ -73,7 +73,7 @@ export default function ProfilePage() {
       if (user?.id) {
         try {
           setIsLoading(true)
-          const userOrders = await ordersService.getByUser(user.id)
+          const userOrders = await ordersService.getByUser(Number(user.id))
           setOrders(userOrders)
         } catch (error) {
           console.error("Error al cargar pedidos:", error)
@@ -120,7 +120,7 @@ export default function ProfilePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <img src="/momentos-dulces-logo.png" alt="Momentos Dulces" className="h-12 w-auto" />
+              <img src="/momentos-dulces-logo.png" alt="Momentos Dulces" className="h-24 w-auto" />
             </Link>
 
             <nav className="hidden md:flex items-center gap-8">
