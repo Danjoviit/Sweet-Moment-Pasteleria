@@ -72,8 +72,8 @@ export default function ContactoPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Ubicación</h3>
-                      <p className="text-gray-600">Centro Comercial, Local 5</p>
-                      <p className="text-sm text-gray-500 mt-1">Tu ciudad, País</p>
+                      <p className="text-gray-600">Centro Comercial Paseo Tuy, Local 5</p>
+                      <p className="text-sm text-gray-500 mt-1">Santa Teresa</p>
                     </div>
                   </CardContent>
                 </Card>
