@@ -62,7 +62,14 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                     />
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900 mb-1">{item.name}</h3>
-                      <p className="text-rose-600 font-bold mb-2"><Price value={item.price} /></p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-rose-600 font-bold">
+                          <Price value={item.discount ? item.price * (1 - item.discount / 100) : item.price} />
+                        </p>
+                        {item.discount && (
+                          <span className="text-xs text-green-600 font-medium">({item.discount}% OFF)</span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2">
                         <Button
                           size="icon"
