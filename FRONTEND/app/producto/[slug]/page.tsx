@@ -88,6 +88,8 @@ export default function ProductoPage() {
       price: finalPrice,
       image: product.image,
       customizations: selectedCustomizations,
+      discount: product.discount,
+      isCombo: product.isCombo,
     })
 
     router.push("/menu")
