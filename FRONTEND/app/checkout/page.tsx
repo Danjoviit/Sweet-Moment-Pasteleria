@@ -13,18 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/lib/cart-store"
 import { useAuthStore } from "@/lib/auth-store"
-import { ordersService } from "@/lib/api/services"
+import { ordersService, deliveryZonesService } from "@/lib/api/services"
 import { cn } from "@/lib/utils"
 import { Header } from "@/components/header"
 import { Price } from "@/components/ui/price"
-
-const deliveryZones = [
-  { id: "zona1", name: "Zona 1 - Centro", cost: 5.0, estimatedTime: "30-45 min" },
-  { id: "zona2", name: "Zona 2 - Norte", cost: 7.5, estimatedTime: "45-60 min" },
-  { id: "zona3", name: "Zona 3 - Sur", cost: 7.5, estimatedTime: "45-60 min" },
-  { id: "zona4", name: "Zona 4 - Este", cost: 10.0, estimatedTime: "60-75 min" },
-  { id: "zona5", name: "Zona 5 - Oeste", cost: 10.0, estimatedTime: "60-75 min" },
-]
+import type { DeliveryZone } from "@/lib/api/types"
 
 const pickupTimes = [
   { id: "5min", name: "5 minutos", minutes: 5 },
@@ -45,12 +38,36 @@ export default function CheckoutPage() {
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery")
   const [pickupTime, setPickupTime] = useState("")
 
+  // Dynamic delivery zones from backend
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
+  const [isLoadingZones, setIsLoadingZones] = useState(true)
+  const [zonesError, setZonesError] = useState<string | null>(null)
+
   // Check authentication
   useEffect(() => {
     if (isHydrated && !isAuthenticated) {
       router.push("/login?redirect=/checkout")
     }
   }, [isHydrated, isAuthenticated, router])
+
+  // Fetch delivery zones from backend
+  useEffect(() => {
+    const fetchDeliveryZones = async () => {
+      try {
+        setIsLoadingZones(true)
+        setZonesError(null)
+        const zones = await deliveryZonesService.getAll()
+        setDeliveryZones(zones)
+      } catch (error) {
+        console.error("Error fetching delivery zones:", error)
+        setZonesError("No se pudieron cargar las zonas de delivery. Por favor, intenta de nuevo.")
+      } finally {
+        setIsLoadingZones(false)
+      }
+    }
+
+    fetchDeliveryZones()
+  }, [])
 
   const [deliveryInfo, setDeliveryInfo] = useState({
     name: "",
@@ -66,9 +83,9 @@ export default function CheckoutPage() {
     cvv: "",
   })
 
-  const selectedZone = deliveryZones.find((z) => z.id === deliveryZone)
+  const selectedZone = deliveryZones.find((z) => z.id.toString() === deliveryZone)
   const selectedPickupTime = pickupTimes.find((t) => t.id === pickupTime)
-  const deliveryCost = deliveryType === "delivery" ? selectedZone?.cost || 0 : 0
+  const deliveryCost = deliveryType === "delivery" ? Number(selectedZone?.price || 0) : 0
   const subtotal = getTotalPrice()
   const total = subtotal + deliveryCost
 
@@ -84,7 +101,7 @@ export default function CheckoutPage() {
 
       // Crear pedido
       const orderData = {
-        userId: user?.id,
+        userId: user?.id ? Number(user.id) : undefined,
         customerName: deliveryInfo.name,
         customerEmail: user?.email || "",
         customerPhone: deliveryInfo.phone,
@@ -102,7 +119,7 @@ export default function CheckoutPage() {
         total: total,
         deliveryType: deliveryType,
         deliveryAddress: deliveryType === "delivery" ? deliveryInfo.address : undefined,
-        deliveryZone: deliveryType === "delivery" ? selectedZone?.name : undefined,
+        deliveryZone: deliveryType === "delivery" ? selectedZone?.id : undefined,
         pickupTime: deliveryType === "pickup" ? selectedPickupTime?.name : undefined,
         paymentMethod: paymentMethodMap[paymentMethod as keyof typeof paymentMethodMap],
         notes: deliveryInfo.reference || undefined,
@@ -287,14 +304,19 @@ export default function CheckoutPage() {
 
                       <div className="space-y-2">
                         <Label htmlFor="zone">Zona de Entrega</Label>
-                        <Select value={deliveryZone} onValueChange={setDeliveryZone}>
+                        {zonesError && (
+                          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                            {zonesError}
+                          </div>
+                        )}
+                        <Select value={deliveryZone} onValueChange={setDeliveryZone} disabled={isLoadingZones || !!zonesError}>
                           <SelectTrigger className="border-rose-200 focus:border-rose-500">
-                            <SelectValue placeholder="Selecciona tu zona" />
+                            <SelectValue placeholder={isLoadingZones ? "Cargando zonas..." : "Selecciona tu zona"} />
                           </SelectTrigger>
                           <SelectContent>
                             {deliveryZones.map((zone) => (
-                              <SelectItem key={zone.id} value={zone.id}>
-                                {zone.name} - <Price value={zone.cost} showSymbol={true} /> ({zone.estimatedTime})
+                              <SelectItem key={zone.id} value={zone.id.toString()}>
+                                {zone.name} - <Price value={Number(zone.price)} showSymbol={true} /> ({zone.estimatedTime})
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -630,7 +652,13 @@ export default function CheckoutPage() {
                         )}
                         <p className="text-xs text-gray-600">Cantidad: {item.quantity}</p>
                         <p className="text-sm font-semibold text-rose-600">
-                          <Price value={Number(item.price) * item.quantity} />
+                          <Price
+                            value={
+                              item.discount
+                                ? Number(item.price) * item.quantity * (1 - item.discount / 100)
+                                : Number(item.price) * item.quantity
+                            }
+                          />
                           {item.discount && <span className="text-xs text-green-600 ml-1">({item.discount}% OFF)</span>}
                         </p>
                       </div>
