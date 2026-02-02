@@ -11,83 +11,52 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuthStore } from "@/lib/auth-store"
 import { cn } from "@/lib/utils"
 import { Header } from "@/components/header"
-
-// Mock data para pedidos
-const mockOrders = [
-  {
-    id: "ORD-001",
-    customer: "Juan Pérez",
-    phone: "+58 424-111-1111",
-    date: "2025-01-10 10:30 AM",
-    status: "received",
-    deliveryType: "delivery",
-    items: [
-      { name: "Torta de Chocolate", quantity: 1, price: 45.0 },
-      { name: "Brownie Premium", quantity: 2, price: 22.0 },
-    ],
-    subtotal: 89.0,
-    delivery: 3.5,
-    total: 92.5,
-    zone: "Zona 1",
-    address: "Av. Principal, Edificio Torre, Piso 5, Apto 5B",
-    paymentMethod: "Tarjeta de Crédito",
-  },
-  {
-    id: "ORD-002",
-    customer: "María González",
-    phone: "+58 424-222-2222",
-    date: "2025-01-10 11:15 AM",
-    status: "preparing",
-    deliveryType: "pickup",
-    items: [
-      { name: "Cheesecake de Fresa", quantity: 1, price: 38.0 },
-      { name: "Fresas con Crema Grande", quantity: 1, price: 18.0 },
-    ],
-    subtotal: 56.0,
-    delivery: 0,
-    total: 56.0,
-    pickupTime: "15 minutos",
-    paymentMethod: "Pago Móvil",
-  },
-  {
-    id: "ORD-003",
-    customer: "Carlos Rodríguez",
-    phone: "+58 424-333-3333",
-    date: "2025-01-10 11:45 AM",
-    status: "ready",
-    deliveryType: "delivery",
-    items: [
-      { name: "Donas Glaseadas (Combo 5)", quantity: 1, price: 12.5 },
-      { name: "Café Latte", quantity: 2, price: 8.0 },
-    ],
-    subtotal: 28.5,
-    delivery: 5.0,
-    total: 33.5,
-    zone: "Zona 2",
-    address: "Calle 5, Casa #25, Urbanización Los Pinos",
-    paymentMethod: "Efectivo (Dólares)",
-  },
-]
+import { ordersService } from "@/lib/api/services"
+import type { Order } from "@/lib/api/types"
 
 const statusConfig = {
-  received: { label: "Recibido", color: "bg-blue-500", icon: Package },
-  preparing: { label: "En Preparación", color: "bg-amber-500", icon: Clock },
-  ready: { label: "Listo", color: "bg-green-500", icon: CheckCircle },
-  "in-transit": { label: "En Camino", color: "bg-purple-500", icon: Package },
-  delivered: { label: "Entregado", color: "bg-green-600", icon: CheckCircle },
-  cancelled: { label: "Cancelado", color: "bg-red-500", icon: XCircle },
+  recibido: { label: "Recibido", color: "bg-blue-500", icon: Package },
+  en_preparacion: { label: "En Preparación", color: "bg-amber-500", icon: Clock },
+  listo: { label: "Listo", color: "bg-green-500", icon: CheckCircle },
+  en_camino: { label: "En Camino", color: "bg-purple-500", icon: Package },
+  entregado: { label: "Entregado", color: "bg-green-600", icon: CheckCircle },
+  cancelado: { label: "Cancelado", color: "bg-red-500", icon: XCircle },
 }
 
 export default function RecepcionistaPage() {
   const router = useRouter()
   const { user, isAuthenticated, logout } = useAuthStore()
   const [selectedTab, setSelectedTab] = useState("active")
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
 
+  // useEffect(() => {
+  //   if (!isAuthenticated || user?.role !== "recepcionista") {
+  //     router.push("/login")
+  //   }
+  // }, [isAuthenticated, user, router])
+
+  // Fetch orders from API
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "recepcionista") {
-      router.push("/login")
+    const fetchOrders = async () => {
+      try {
+        setLoading(true)
+        const data = await ordersService.getAll()
+        setOrders(data)
+      } catch (error) {
+        console.error("Error fetching orders:", error)
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [isAuthenticated, user, router])
+
+    if (isAuthenticated && user?.role === "recepcionista") {
+      fetchOrders()
+      // Refresh orders every 30 seconds
+      const interval = setInterval(fetchOrders, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [isAuthenticated, user])
 
   if (!isAuthenticated || user?.role !== "recepcionista") {
     return null
@@ -98,13 +67,31 @@ export default function RecepcionistaPage() {
     router.push("/login")
   }
 
-  const updateOrderStatus = (orderId: string, newStatus: string) => {
-    console.log(`Updating order ${orderId} to status: ${newStatus}`)
-    // Aquí se conectaría con el backend
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      await ordersService.updateStatus(orderId, newStatus as Order["status"])
+      // Refresh orders after update
+      const data = await ordersService.getAll()
+      setOrders(data)
+    } catch (error) {
+      console.error(`Error updating order ${orderId}:`, error)
+    }
   }
 
-  const activeOrders = mockOrders.filter((o) => !["delivered", "cancelled"].includes(o.status))
-  const completedOrders = mockOrders.filter((o) => ["delivered", "cancelled"].includes(o.status))
+  const activeOrders = orders.filter((o) => !["entregado", "cancelado"].includes(o.status))
+  const completedOrders = orders.filter((o) => ["entregado", "cancelado"].includes(o.status))
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando pedidos...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
@@ -158,7 +145,7 @@ export default function RecepcionistaPage() {
                   <div>
                     <p className="text-sm text-gray-600 mb-1">En Preparación</p>
                     <p className="text-3xl font-bold text-gray-900">
-                      {mockOrders.filter((o) => o.status === "preparing").length}
+                      {orders.filter((o) => o.status === "en_preparacion").length}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
@@ -174,7 +161,7 @@ export default function RecepcionistaPage() {
                   <div>
                     <p className="text-sm text-gray-600 mb-1">Listos</p>
                     <p className="text-3xl font-bold text-gray-900">
-                      {mockOrders.filter((o) => o.status === "ready").length}
+                      {orders.filter((o) => o.status === "listo").length}
                     </p>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -224,26 +211,26 @@ export default function RecepcionistaPage() {
                         <div className="flex-1">
                           <div className="flex items-start justify-between mb-4">
                             <div>
-                              <h3 className="text-xl font-bold text-gray-900 mb-2">Pedido #{order.id}</h3>
+                              <h3 className="text-xl font-bold text-gray-900 mb-2">Pedido #{order.orderNumber}</h3>
                               <div className="space-y-1 text-sm text-gray-600">
                                 <div className="flex items-center gap-2">
                                   <Package className="h-4 w-4" />
-                                  <span className="font-medium">{order.customer}</span>
+                                  <span className="font-medium">{order.customerName}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Phone className="h-4 w-4" />
-                                  <span>{order.phone}</span>
+                                  <span>{order.customerPhone}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Clock className="h-4 w-4" />
-                                  <span>{order.date}</span>
+                                  <span>{new Date(order.createdAt).toLocaleString('es-VE')}</span>
                                 </div>
                                 {order.deliveryType === "delivery" ? (
                                   <div className="flex items-start gap-2">
                                     <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                     <div>
-                                      <p className="font-medium">{order.zone}</p>
-                                      <p className="text-xs">{order.address}</p>
+                                      <p className="font-medium">{order.deliveryZone || 'N/A'}</p>
+                                      <p className="text-xs">{order.deliveryAddress || 'N/A'}</p>
                                     </div>
                                   </div>
                                 ) : (
@@ -279,9 +266,9 @@ export default function RecepcionistaPage() {
                               {order.items.map((item, idx) => (
                                 <div key={idx} className="flex justify-between text-sm">
                                   <span className="text-gray-700">
-                                    {item.quantity}x {item.name}
+                                    {item.quantity}x {item.productName}
                                   </span>
-                                  <span className="font-medium text-gray-900">${Number(item.price).toFixed(2)}</span>
+                                  <span className="font-medium text-gray-900">${Number(item.totalPrice).toFixed(2)}</span>
                                 </div>
                               ))}
                               <div className="border-t border-gray-200 pt-2 mt-2">
@@ -289,10 +276,10 @@ export default function RecepcionistaPage() {
                                   <span className="text-gray-600">Subtotal:</span>
                                   <span className="text-gray-900">${Number(order.subtotal).toFixed(2)}</span>
                                 </div>
-                                {order.delivery > 0 && (
+                                {order.deliveryCost > 0 && (
                                   <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Envío:</span>
-                                    <span className="text-gray-900">${Number(order.delivery).toFixed(2)}</span>
+                                    <span className="text-gray-900">${Number(order.deliveryCost).toFixed(2)}</span>
                                   </div>
                                 )}
                                 <div className="flex justify-between font-bold text-base mt-1">
@@ -315,37 +302,37 @@ export default function RecepcionistaPage() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="received">
+                                  <SelectItem value="recibido">
                                     <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-blue-500" />
                                       Recibido
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="preparing">
+                                  <SelectItem value="en_preparacion">
                                     <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-amber-500" />
                                       En Preparación
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="ready">
+                                  <SelectItem value="listo">
                                     <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-green-500" />
                                       Listo
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="in-transit">
+                                  <SelectItem value="en_camino">
                                     <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-purple-500" />
                                       En Camino
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="delivered">
+                                  <SelectItem value="entregado">
                                     <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-green-600" />
                                       Entregado
                                     </div>
                                   </SelectItem>
-                                  <SelectItem value="cancelled">
+                                  <SelectItem value="cancelado">
                                     <div className="flex items-center gap-2">
                                       <div className="w-2 h-2 rounded-full bg-red-500" />
                                       Cancelado
@@ -386,9 +373,9 @@ export default function RecepcionistaPage() {
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">Pedido #{order.id}</h3>
-                          <p className="text-sm text-gray-600">{order.customer}</p>
-                          <p className="text-sm text-gray-600">{order.date}</p>
+                          <h3 className="text-lg font-bold text-gray-900">Pedido #{order.orderNumber}</h3>
+                          <p className="text-sm text-gray-600">{order.customerName}</p>
+                          <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleString('es-VE')}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xl font-bold text-rose-600">${Number(order.total).toFixed(2)}</p>
