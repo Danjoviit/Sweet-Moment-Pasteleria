@@ -6,16 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-
-interface Product {
-  id: number
-  name: string
-  price: number
-  category: string
-  image: string
-  stock: number
-  basePrice?: number
-}
+import type { Product } from "@/lib/api/types"
 
 interface CustomizationModalProps {
   product: Product
@@ -26,6 +17,7 @@ interface CustomizationModalProps {
 
 export function ProductCustomizationModal({ product, isOpen, onClose, onAddToCart }: CustomizationModalProps) {
   const [quantity, setQuantity] = useState(1)
+  const [selectedVariant, setSelectedVariant] = useState<number | null>(null)
   const [selectedSize, setSelectedSize] = useState<string>("")
   const [selectedToppings, setSelectedToppings] = useState<string[]>([])
   const [selectedFilling, setSelectedFilling] = useState<string>("")
@@ -110,6 +102,12 @@ export function ProductCustomizationModal({ product, isOpen, onClose, onAddToCar
   const calculatePrice = () => {
     let price = Number(product.basePrice || product.price)
 
+    // Use variant price if a variant is selected
+    if (selectedVariant && product.variants) {
+      const variant = product.variants.find((v) => v.id === selectedVariant)
+      if (variant) price = Number(variant.price)
+    }
+
     // Add size price
     if (selectedSize) {
       const sizeOption = sizeOptions.find((s) => s.id === selectedSize)
@@ -167,6 +165,15 @@ export function ProductCustomizationModal({ product, isOpen, onClose, onAddToCar
     if (selectedDoughType) customizations.doughType = selectedDoughType
     if (selectedPortion) customizations.portion = selectedPortion
 
+    // Add selected variant info
+    if (selectedVariant && product.variants) {
+      const variant = product.variants.find((v) => v.id === selectedVariant)
+      if (variant) {
+        customizations.variant = variant.type
+        customizations.variantId = variant.id
+      }
+    }
+
     for (let i = 0; i < quantity; i++) {
       onAddToCart(product, customizations, finalPrice)
     }
@@ -174,6 +181,12 @@ export function ProductCustomizationModal({ product, isOpen, onClose, onAddToCar
   }
 
   const hasRequiredSelections = () => {
+    // If product has variants, require variant selection
+    if (product.variants && product.variants.length > 0) {
+      if (!selectedVariant) return false
+    }
+
+    // Category-specific requirements
     if (product.category === "fresas") return selectedSize !== ""
     if (product.category === "donas") return selectedDoughType !== "" && selectedGlaze !== ""
     if (product.category === "tortas") return selectedPortion !== "" && selectedFilling !== ""
@@ -207,6 +220,33 @@ export function ProductCustomizationModal({ product, isOpen, onClose, onAddToCar
           </div>
 
           <Separator className="bg-rose-100" />
+
+          {/* Product Variants from Backend */}
+          {product.variants && product.variants.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3">
+                Selecciona una opción <span className="text-rose-500">*</span>
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                {product.variants.map((variant) => (
+                  <button
+                    key={variant.id}
+                    onClick={() => setSelectedVariant(variant.id)}
+                    className={cn(
+                      "p-4 rounded-lg border-2 transition-all text-left flex justify-between items-center",
+                      selectedVariant === variant.id ? "border-rose-500 bg-rose-50" : "border-gray-200 hover:border-rose-300",
+                    )}
+                  >
+                    <div>
+                      <div className="font-medium">{variant.type}</div>
+                      {variant.unit && <div className="text-xs text-gray-500">{variant.unit}</div>}
+                    </div>
+                    <div className="text-lg font-bold text-rose-600">${Number(variant.price).toFixed(2)}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Size Selection (Fresas con Crema) */}
           {sizeOptions.length > 0 && (
