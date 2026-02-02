@@ -47,7 +47,7 @@ export interface Product {
 }
 
 export interface OrderItem {
-  id: number
+  id?: number
   productId: number
   productName: string
   productImage: string
@@ -123,10 +123,13 @@ export interface Promotion {
 export interface DashboardStats {
   totalOrders: number
   pendingOrders: number
+  preparingOrders: number
+  completedOrders: number
   totalRevenue: number
   todayRevenue: number
   totalProducts: number
   lowStockProducts: number
+  lowStocProducts: number  // Alias for compatibility
   totalUsers: number
   newUsersToday: number
 }
