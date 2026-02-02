@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Image from "next/image"
 
 export function DynamicProductBackground() {
     const [images, setImages] = useState<string[]>([])
@@ -14,54 +13,164 @@ export function DynamicProductBackground() {
                 const response = await fetch(`${apiUrl}/products/collage-images/`)
                 if (response.ok) {
                     const data = await response.json()
-                    console.log("DynamicBackground: Fetch success", data)
-                    setImages(data)
-                    // Empezar la animación de entrada un poco después
-                    setTimeout(() => setLoaded(true), 100)
-                } else {
-                    console.error("DynamicBackground: Fetch failed", response.status)
+                    if (Array.isArray(data) && data.length > 0) {
+                        setImages(data)
+                        setTimeout(() => setLoaded(true), 200)
+                    }
                 }
-            } catch (error) {
-                console.error("Error fetching background images:", error)
+            } catch (err) {
+                console.error("Error fetching background images:", err)
             }
         }
-
         fetchImages()
     }, [])
 
     if (images.length === 0) return null
 
+    // Repetir imágenes para llenar toda la pantalla horizontalmente
+    const allImages = [...images, ...images, ...images, ...images, ...images, ...images]
+
     return (
         <div
-            className={`fixed inset-0 z-0 overflow-hidden pointer-events-none transition-opacity duration-1000 ${loaded ? 'opacity-[0.07]' : 'opacity-0'}`}
+            style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                zIndex: 50,
+                pointerEvents: 'none',
+                overflow: 'hidden',
+                opacity: loaded ? 0.05 : 0,
+                transition: 'opacity 1.5s ease-in-out'
+            }}
             aria-hidden="true"
         >
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 w-[120vw] h-[120vh] -ml-[10vw] -mt-[10vh] transform rotate-[-5deg]">
-                {images.map((src, index) => (
-                    <div key={index} className="relative aspect-square w-full h-full overflow-hidden rounded-lg opacity-80">
-                        <Image
-                            src={src}
-                            alt=""
-                            fill
-                            className="object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                            sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 15vw"
-                        />
-                    </div>
-                ))}
-                {/* Repetir imágenes si son pocas para llenar la pantalla */}
-                {images.length < 20 && images.map((src, index) => (
-                    <div key={`rep-${index}`} className="relative aspect-square w-full h-full overflow-hidden rounded-lg opacity-80">
-                        <Image
-                            src={src}
-                            alt=""
-                            fill
-                            className="object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                            sizes="(max-width: 768px) 33vw, (max-width: 1200px) 20vw, 15vw"
-                        />
-                    </div>
-                ))}
+            {/* Multiple rows of images scrolling horizontally */}
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-around',
+                height: '100%',
+                gap: '20px',
+                padding: '20px 0'
+            }}>
+                {/* Row 1 */}
+                <div style={{
+                    display: 'flex',
+                    gap: '20px',
+                    animation: 'scrollLeft 60s linear infinite'
+                }}>
+                    {allImages.map((src, index) => (
+                        <div
+                            key={`row1-${index}`}
+                            style={{
+                                flexShrink: 0,
+                                width: '180px',
+                                height: '120px',
+                                borderRadius: '12px',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            <img
+                                src={src}
+                                alt=""
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    filter: 'grayscale(100%)'
+                                }}
+                                loading="lazy"
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Row 2 - opposite direction */}
+                <div style={{
+                    display: 'flex',
+                    gap: '20px',
+                    animation: 'scrollRight 50s linear infinite'
+                }}>
+                    {allImages.reverse().map((src, index) => (
+                        <div
+                            key={`row2-${index}`}
+                            style={{
+                                flexShrink: 0,
+                                width: '180px',
+                                height: '120px',
+                                borderRadius: '12px',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            <img
+                                src={src}
+                                alt=""
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    filter: 'grayscale(100%)'
+                                }}
+                                loading="lazy"
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                {/* Row 3 */}
+                <div style={{
+                    display: 'flex',
+                    gap: '20px',
+                    animation: 'scrollLeft 70s linear infinite'
+                }}>
+                    {allImages.map((src, index) => (
+                        <div
+                            key={`row3-${index}`}
+                            style={{
+                                flexShrink: 0,
+                                width: '180px',
+                                height: '120px',
+                                borderRadius: '12px',
+                                overflow: 'hidden'
+                            }}
+                        >
+                            <img
+                                src={src}
+                                alt=""
+                                style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    filter: 'grayscale(100%)'
+                                }}
+                                loading="lazy"
+                            />
+                        </div>
+                    ))}
+                </div>
             </div>
-            <div className="absolute inset-0 backdrop-blur-[1px]"></div>
+
+            {/* CSS Animations */}
+            <style jsx global>{`
+                @keyframes scrollLeft {
+                    0% {
+                        transform: translateX(0);
+                    }
+                    100% {
+                        transform: translateX(-50%);
+                    }
+                }
+                @keyframes scrollRight {
+                    0% {
+                        transform: translateX(-50%);
+                    }
+                    100% {
+                        transform: translateX(0);
+                    }
+                }
+            `}</style>
         </div>
     )
 }
