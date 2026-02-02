@@ -12,12 +12,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-uyc40**!)!7qh2k$_&d76f!!+b4iw(n-m!k#63x7aq&4uy=f%^'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-uyc40**!)!7qh2k$_&d76f!!+b4iw(n-m!k#63x7aq&4uy=f%^')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',') if not DEBUG else ['*']
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -75,11 +75,11 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'sweet',
-        'USER': 'postgres',
-        'PASSWORD': 'Miranda29..*',
-        'HOST': 'localhost',
-        'PORT': '5432'
+        'NAME': os.environ.get('DATABASE_NAME', 'sweet'),
+        'USER': os.environ.get('DATABASE_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', 'Miranda29..*'),
+        'HOST': os.environ.get('DATABASE_HOST', 'localhost'),
+        'PORT': os.environ.get('DATABASE_PORT', '5432')
     }
 }
 
@@ -165,8 +165,8 @@ SIMPLE_JWT = {
 AUTH_USER_MODEL = 'sweet.User'
 
 # Redis Configuration
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
+REDIS_HOST = os.environ.get('REDIS_HOST', 'localhost')
+REDIS_PORT = os.environ.get('REDIS_PORT', '6379')
 REDIS_DB = 0
 
 # Cache configuration with Redis
@@ -182,10 +182,8 @@ CACHES = {
     }
 }
 
-# Email Configuration - TEMPORARY: Using console backend
-# TODO: Switch back to SMTP once email credentials are verified
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# Email Configuration - Using SMTP for real email sending
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
@@ -194,7 +192,7 @@ EMAIL_HOST_PASSWORD = config('EMAIL_PASSWORD', default=None)
 DEFAULT_FROM_EMAIL = config('EMAIL_USER', default='noreply@momentosdulces.com')
 
 # Frontend URL
-FRONTEND_URL = 'http://localhost:3000'
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000')
 
 # Media files configuration (uploaded files like product images)
 MEDIA_URL = '/media/'
