@@ -57,6 +57,8 @@ export default function MenuPage() {
         name: product.name,
         price: product.price || product.basePrice,
         image: product.image,
+        discount: product.discount,
+        isCombo: product.isCombo,
       })
     }
   }
@@ -68,6 +70,8 @@ export default function MenuPage() {
       price: finalPrice,
       image: product.image,
       customizations,
+      discount: product.discount,
+      isCombo: product.isCombo,
     })
   }
 
