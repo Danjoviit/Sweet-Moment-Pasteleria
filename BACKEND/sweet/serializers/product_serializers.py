@@ -26,6 +26,7 @@ class ProductoSerializer(serializers.ModelSerializer):
 
     basePrice = serializers.DecimalField(source='base_price', max_digits=10, decimal_places=2)
     isActive = serializers.BooleanField(source='is_active')
+    isCombo = serializers.BooleanField(source='is_combo', required=False)
 
     price = serializers.DecimalField(source='base_price', read_only=True, max_digits=10, decimal_places=2)
     
@@ -34,7 +35,7 @@ class ProductoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'slug', 'description', 'category', 'image', 'basePrice', 'price', 'stock', 'isActive', 'variants']
+        fields = ['id', 'name', 'slug', 'description', 'category', 'image', 'basePrice', 'price', 'stock', 'isActive', 'discount', 'isCombo', 'variants']
 
     def to_internal_value(self, data):
         """Handle FormData string values"""
