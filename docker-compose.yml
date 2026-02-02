@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    container_name: sweet_db
+    environment:
+      POSTGRES_DB: sweet
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Miranda29..*
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sweet_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: sweet_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sweet_network
+
+  # Django Backend
+  backend:
+    build:
+      context: ./BACKEND
+      dockerfile: Dockerfile
+    container_name: sweet_backend
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./BACKEND:/app
+      - media_files:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=django-insecure-uyc40**!)!7qh2k$$_&d76f!!+b4iw(n-m!k#63x7aq&4uy=f%^
+      - DATABASE_NAME=sweet
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=Miranda29..*
+      - DATABASE_HOST=db
+      - DATABASE_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - FRONTEND_URL=http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - sweet_network
+
+  # Next.js Frontend (Development Mode)
+  frontend:
+    build:
+      context: ./FRONTEND
+      dockerfile: Dockerfile.dev
+    container_name: sweet_frontend
+    command: npm run dev
+    volumes:
+      - ./FRONTEND:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    networks:
+      - sweet_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  media_files:
+
+
+networks:
+  sweet_network:
+    driver: bridge
