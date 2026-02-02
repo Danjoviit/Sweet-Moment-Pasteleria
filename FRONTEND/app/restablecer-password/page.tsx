@@ -2,16 +2,16 @@
 
 import type React from "react"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, Suspense } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Eye, EyeOff, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { Eye, EyeOff, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Header } from "@/components/header"
-import { emailService } from "@/lib/email-service"
+import { useAuthStore } from "@/lib/auth-store"
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams()
@@ -23,29 +23,14 @@ function ResetPasswordForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
-  const [tokenValid, setTokenValid] = useState<boolean | null>(null)
-  const [tokenEmail, setTokenEmail] = useState<string>("")
 
-  useEffect(() => {
-    if (token) {
-      const result = emailService.verifyPasswordResetToken(token)
-      setTokenValid(result.valid)
-      if (result.email) {
-        setTokenEmail(result.email)
-      }
-      if (!result.valid && result.error) {
-        setError(result.error)
-      }
-    } else {
-      setTokenValid(false)
-    }
-  }, [token])
+  const resetPassword = useAuthStore((state) => state.resetPassword)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!token) {
-      setError("Token de recuperación inválido")
+      setError("Token de recuperación no proporcionado")
       return
     }
 
@@ -62,44 +47,20 @@ function ResetPasswordForm() {
     setIsLoading(true)
     setError("")
 
-    const tokenCheck = emailService.verifyPasswordResetToken(token)
-    if (!tokenCheck.valid) {
-      setError(tokenCheck.error || "Token inválido")
-      setIsLoading(false)
-      return
-    }
-
-    // Simular actualización de contraseña
-    // En producción, aquí se enviaría la nueva contraseña al backend
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    emailService.invalidatePasswordResetToken(token)
-
-    // Mostrar éxito
-    // Nota: La actualización real de la contraseña debe hacerse en el backend
-    // Este frontend solo maneja el flujo de UI y validación de tokens
-    console.log(`[Momentos Dulces] Contraseña actualizada para: ${tokenEmail}`)
-    console.log(`[Momentos Dulces] Nueva contraseña: ${password}`)
-    console.log("[Momentos Dulces] En producción, esto se enviaría al backend para actualizar en la base de datos")
+    // Llamar al backend para restablecer la contraseña
+    const result = await resetPassword(token, password)
 
     setIsLoading(false)
-    setSuccess(true)
+
+    if (result.success) {
+      setSuccess(true)
+    } else {
+      setError(result.error || "Error al restablecer la contraseña")
+    }
   }
 
-  // Mientras se verifica el token
-  if (tokenValid === null) {
-    return (
-      <Card className="max-w-md mx-auto border-rose-100 shadow-lg">
-        <CardContent className="p-8 text-center">
-          <div className="animate-spin w-8 h-8 border-4 border-rose-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Verificando enlace...</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  // Token inválido o expirado
-  if (!token || !tokenValid) {
+  // Si no hay token en la URL
+  if (!token) {
     return (
       <Card className="max-w-md mx-auto border-rose-100 shadow-lg">
         <CardContent className="p-8 text-center">
@@ -108,7 +69,7 @@ function ResetPasswordForm() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Enlace Inválido</h2>
           <p className="text-gray-600 mb-6">
-            {error || "El enlace de recuperación es inválido o ha expirado. Por favor solicita un nuevo enlace."}
+            No se encontró un token de recuperación válido. Por favor solicita un nuevo enlace.
           </p>
           <Link href="/recuperar-password">
             <Button className="w-full bg-rose-500 hover:bg-rose-600 text-white">Solicitar Nuevo Enlace</Button>
@@ -142,21 +103,11 @@ function ResetPasswordForm() {
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-bold text-gray-900">Nueva Contraseña</CardTitle>
         <CardDescription>
-          Ingresa tu nueva contraseña para la cuenta: <strong>{tokenEmail}</strong>
+          Ingresa tu nueva contraseña
         </CardDescription>
       </CardHeader>
 
       <CardContent>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-blue-700">
-              En modo desarrollo, la contraseña se muestra en la consola. En producción, se enviará al backend para
-              actualizarla en la base de datos.
-            </p>
-          </div>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password">Nueva Contraseña</Label>
