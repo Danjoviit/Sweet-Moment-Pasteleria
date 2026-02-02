@@ -99,7 +99,7 @@ export default function PromotionsPage() {
       setFormData({
         name: promo.name,
         description: promo.description || "",
-        code: promo.code,
+        code: promo.code || "",
         discountType: promo.discountType,
         discountValue: promo.discountValue.toString(),
         minPurchase: (promo.minPurchase || 0).toString(),
@@ -225,7 +225,7 @@ export default function PromotionsPage() {
                               : `$${promo.discountValue}`
                             }
                           </span>
-                          {promo.minPurchase > 0 && (
+                          {(promo.minPurchase ?? 0) > 0 && (
                             <div className="text-xs text-gray-500">
                               Min: ${promo.minPurchase}
                             </div>
