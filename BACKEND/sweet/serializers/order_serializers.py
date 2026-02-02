@@ -70,6 +70,24 @@ class OrderSerializer(serializers.ModelSerializer):
             order = Order.objects.create(**validated_data)
 
             for item_data in items_data:
+                product = item_data.get('product')
+                quantity = item_data.get('quantity', 1)
+                
+                # Verificar y reducir el stock del producto
+                if product:
+                    # Bloquear el producto para evitar race conditions
+                    product_to_update = Product.objects.select_for_update().get(pk=product.pk)
+                    
+                    if product_to_update.stock < quantity:
+                        raise serializers.ValidationError(
+                            f"Stock insuficiente para {product_to_update.name}. "
+                            f"Disponible: {product_to_update.stock}, Solicitado: {quantity}"
+                        )
+                    
+                    # Reducir el stock
+                    product_to_update.stock -= quantity
+                    product_to_update.save()
+                
                 OrderItem.objects.create(order=order, **item_data)
 
         return order
