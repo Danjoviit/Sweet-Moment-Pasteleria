@@ -496,7 +496,14 @@ export const favoritesService = {
 // ==================== EXCHANGE RATE ====================
 export const exchangeRateService = {
   get: async (): Promise<import("./types").ExchangeRate> => {
-    return fetchApi<import("./types").ExchangeRate>("/exchange-rate/")
+    // Public endpoint - don't send auth token to avoid 401 if token is expired
+    const response = await fetch(apiUrl("/exchange-rate/"), {
+      headers: { "Content-Type": "application/json" },
+    })
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`)
+    }
+    return response.json()
   },
 
   update: async (usdToBs: number): Promise<import("./types").ExchangeRate> => {
