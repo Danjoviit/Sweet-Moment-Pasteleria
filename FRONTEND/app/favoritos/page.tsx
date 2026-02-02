@@ -61,7 +61,6 @@ export default function FavoritosPage() {
       name: product.name,
       price: product.price || product.basePrice,
       image: product.image,
-      quantity: 1,
     })
   }
 
