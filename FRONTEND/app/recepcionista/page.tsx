@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Package, Clock, CheckCircle, XCircle, Phone, MapPin, DollarSign } from "lucide-react"
+import { Package, Clock, CheckCircle, XCircle, Phone, MapPin, DollarSign, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -280,6 +280,15 @@ export default function RecepcionistaPage() {
                                   <div className="flex justify-between text-sm">
                                     <span className="text-gray-600">Envío:</span>
                                     <span className="text-gray-900">${Number(order.deliveryCost).toFixed(2)}</span>
+                                  </div>
+                                )}
+                                {order.discountAmount && Number(order.discountAmount) > 0 && (
+                                  <div className="flex justify-between text-sm text-green-600">
+                                    <span className="flex items-center gap-1">
+                                      <Tag className="h-3 w-3" />
+                                      {order.promotionCode ? `Promo: ${order.promotionCode}` : 'Descuento'}
+                                    </span>
+                                    <span>-${Number(order.discountAmount).toFixed(2)}</span>
                                   </div>
                                 )}
                                 <div className="flex justify-between font-bold text-base mt-1">

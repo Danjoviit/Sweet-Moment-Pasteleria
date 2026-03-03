@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ShoppingCart, CreditCard, Smartphone, DollarSign, MapPin, Check, Store, Clock } from "lucide-react"
+import { ShoppingCart, CreditCard, Smartphone, DollarSign, MapPin, Check, Store, Clock, Tag, X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,11 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { useCartStore } from "@/lib/cart-store"
 import { useAuthStore } from "@/lib/auth-store"
-import { ordersService, deliveryZonesService } from "@/lib/api/services"
+import { ordersService, deliveryZonesService, promotionsService } from "@/lib/api/services"
 import { cn } from "@/lib/utils"
 import { Header } from "@/components/header"
 import { Price } from "@/components/ui/price"
-import type { DeliveryZone } from "@/lib/api/types"
+import type { DeliveryZone, Promotion } from "@/lib/api/types"
 
 const pickupTimes = [
   { id: "5min", name: "5 minutos", minutes: 5 },
@@ -42,6 +42,12 @@ export default function CheckoutPage() {
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([])
   const [isLoadingZones, setIsLoadingZones] = useState(true)
   const [zonesError, setZonesError] = useState<string | null>(null)
+
+  // Promotion code states
+  const [promoCode, setPromoCode] = useState("")
+  const [appliedPromotion, setAppliedPromotion] = useState<Promotion | null>(null)
+  const [promoError, setPromoError] = useState<string | null>(null)
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false)
 
   // Check authentication
   useEffect(() => {
@@ -87,7 +93,59 @@ export default function CheckoutPage() {
   const selectedPickupTime = pickupTimes.find((t) => t.id === pickupTime)
   const deliveryCost = deliveryType === "delivery" ? Number(selectedZone?.price || 0) : 0
   const subtotal = getTotalPrice()
-  const total = subtotal + deliveryCost
+
+  // Calculate discount from promotion
+  const calculateDiscount = () => {
+    if (!appliedPromotion) return 0
+    if (appliedPromotion.discountType === "percentage") {
+      return subtotal * (appliedPromotion.discountValue / 100)
+    }
+    return Math.min(appliedPromotion.discountValue, subtotal) // Fixed amount, but not more than subtotal
+  }
+
+  const discount = calculateDiscount()
+  const total = subtotal + deliveryCost - discount
+
+  // Apply promotion code
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) {
+      setPromoError("Por favor ingresa un código promocional")
+      return
+    }
+
+    setIsApplyingPromo(true)
+    setPromoError(null)
+
+    try {
+      const promotion = await promotionsService.getByCode(promoCode.trim().toUpperCase())
+
+      if (!promotion) {
+        setPromoError("Código promocional no válido")
+        return
+      }
+
+      // Check minimum purchase
+      if (promotion.minPurchase && subtotal < promotion.minPurchase) {
+        setPromoError(`Compra mínima requerida: $${promotion.minPurchase}`)
+        return
+      }
+
+      setAppliedPromotion(promotion)
+      setPromoCode("")
+      setPromoError(null)
+    } catch (error) {
+      console.error("Error applying promo:", error)
+      setPromoError("Código promocional inválido o expirado")
+    } finally {
+      setIsApplyingPromo(false)
+    }
+  }
+
+  // Remove applied promotion
+  const handleRemovePromo = () => {
+    setAppliedPromotion(null)
+    setPromoError(null)
+  }
 
   const handleConfirmOrder = async () => {
     setIsProcessing(true)
@@ -123,6 +181,8 @@ export default function CheckoutPage() {
         pickupTime: deliveryType === "pickup" ? selectedPickupTime?.name : undefined,
         paymentMethod: paymentMethodMap[paymentMethod as keyof typeof paymentMethodMap],
         notes: deliveryInfo.reference || undefined,
+        promotionId: appliedPromotion?.id || undefined,
+        discountAmount: discount > 0 ? discount : undefined,
       }
 
       await ordersService.create(orderData)
@@ -668,6 +728,63 @@ export default function CheckoutPage() {
 
                 <Separator className="bg-rose-100" />
 
+                {/* Promo Code Section */}
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2 text-sm font-medium">
+                    <Tag className="h-4 w-4 text-rose-500" />
+                    Código Promocional
+                  </Label>
+
+                  {appliedPromotion ? (
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-green-800">{appliedPromotion.name}</p>
+                          <p className="text-sm text-green-600">
+                            {appliedPromotion.discountType === "percentage"
+                              ? `${appliedPromotion.discountValue}% de descuento`
+                              : `$${appliedPromotion.discountValue} de descuento`}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemovePromo}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Ingresa tu código"
+                        value={promoCode}
+                        onChange={(e) => {
+                          setPromoCode(e.target.value.toUpperCase())
+                          setPromoError(null)
+                        }}
+                        className="border-rose-200 focus:border-rose-500 text-sm"
+                        onKeyDown={(e) => e.key === "Enter" && handleApplyPromo()}
+                      />
+                      <Button
+                        onClick={handleApplyPromo}
+                        disabled={isApplyingPromo || !promoCode.trim()}
+                        className="bg-rose-500 hover:bg-rose-600 text-white shrink-0"
+                      >
+                        {isApplyingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Aplicar"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {promoError && (
+                    <p className="text-sm text-red-500">{promoError}</p>
+                  )}
+                </div>
+
+                <Separator className="bg-rose-100" />
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal ({getTotalItems()} items)</span>
@@ -679,6 +796,12 @@ export default function CheckoutPage() {
                       {deliveryType === "delivery" ? <Price value={deliveryCost} /> : "Gratis"}
                     </span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Descuento</span>
+                      <span className="font-medium">-<Price value={discount} /></span>
+                    </div>
+                  )}
                 </div>
 
                 <Separator className="bg-rose-100" />

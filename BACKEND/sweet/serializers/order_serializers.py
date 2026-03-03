@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from ..models import Order, OrderItem, Product, User, DeliveryZone
+from ..models import Order, OrderItem, Product, User, DeliveryZone, Promotion
 from django.db import transaction
 import uuid
 
@@ -45,6 +45,23 @@ class OrderSerializer(serializers.ModelSerializer):
     deliveryType = serializers.CharField(source='delivery_type')
     deliveryAddress = serializers.CharField(source='delivery_address', required=False, allow_blank=True)
     paymentMethod = serializers.CharField(source='payment_method')
+    
+    # Campos de promoción
+    promotionId = serializers.PrimaryKeyRelatedField(
+        queryset=Promotion.objects.all(),
+        source='promotion',
+        required=False,
+        allow_null=True
+    )
+    discountAmount = serializers.DecimalField(
+        source='discount_amount', 
+        max_digits=10, 
+        decimal_places=2, 
+        required=False,
+        default=0
+    )
+    promotionCode = serializers.SerializerMethodField(read_only=True)
+    promotionName = serializers.SerializerMethodField(read_only=True)
 
     # Campos solamente de lectura
     orderNumber = serializers.CharField(source='order_number', read_only=True)
@@ -57,8 +74,14 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'orderNumber', 'userId', 'customerName', 'customerEmail', 'customerPhone',
             'items', 'subtotal', 'deliveryCost', 'total', 'deliveryType',
             'deliveryAddress', 'DeliveryZone', 'paymentMethod', 'notes', 
-            'status', 'createdAt'
+            'status', 'createdAt', 'promotionId', 'discountAmount', 'promotionCode', 'promotionName'
         ]
+    
+    def get_promotionCode(self, obj):
+        return obj.promotion.code if obj.promotion else None
+    
+    def get_promotionName(self, obj):
+        return obj.promotion.name if obj.promotion else None
 
     def create(self, validated_data):
         items_data = validated_data.pop('items')

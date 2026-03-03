@@ -76,6 +76,10 @@ export interface Order {
   paymentMethod: "tarjeta" | "pago_movil" | "efectivo"
   paymentStatus: "pendiente" | "pagado" | "fallido"
   notes?: string
+  promotionId?: number
+  discountAmount?: number
+  promotionCode?: string
+  promotionName?: string
   createdAt: string
   updatedAt: string
 }
